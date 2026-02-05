@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://d2w2i5h0lhc6l"]
+
+[ext_resource type="Script" uid="uid://d2uelt3b2o5uk" path="res://scripts/npc.gd" id="1_fxbww"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p2gj0"]
+radius = 12.0416
+
+[node name="NPC" type="Node2D"]
+script = ExtResource("1_fxbww")
+
+[node name="PromptLabel" type="Label" parent="."]
+offset_left = -29.0
+offset_top = -31.0
+offset_right = 35.0
+offset_bottom = -20.0
+theme_override_font_sizes/font_size = 7
+text = "Press I to interact"
+horizontal_alignment = 1
+
+[node name="InteractionArea" type="Area2D" parent="."]
+position = Vector2(0, -12)
+collision_layer = 4
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+position = Vector2(0, 5)
+shape = SubResource("CircleShape2D_p2gj0")

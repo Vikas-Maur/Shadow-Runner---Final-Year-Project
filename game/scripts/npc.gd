@@ -5,8 +5,8 @@ const SPEED = 60
 var direction = 1
 
 @onready var animated_sprite = $AnimatedSprite2D
-@export var npc_name: String = "Villager"
-@export_multiline var personality: String = "You are a friendly villager in a medieval town."
+@export var npc_name: String = ""
+@export_multiline var personality: String = ""
 
 var player_in_range = false
 var player_reference = null

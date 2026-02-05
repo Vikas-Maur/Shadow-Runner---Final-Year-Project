@@ -48,6 +48,11 @@ Interact={
 ]
 }
 
+[network]
+
+limits/certificate_bundle_override=""
+limits/enable_tls_v1.3=true
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
