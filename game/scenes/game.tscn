@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://dqnaqj8yb6hwd" path="res://scenes/player.tscn" id="1_rbmkf"]
 [ext_resource type="PackedScene" uid="uid://titgd3vuwxif" path="res://scenes/dialogue_ui.tscn" id="5_iywne"]
 [ext_resource type="PackedScene" uid="uid://ccutp3co6xvox" path="res://scenes/map.tscn" id="5_p57ef"]
+[ext_resource type="PackedScene" uid="uid://cg0whk4rsjo73" path="res://scenes/enemies/slime.tscn" id="6_gee14"]
 [ext_resource type="Script" uid="uid://nko8c6jlmy1d" path="res://scripts/ollama_api.gd" id="6_p57ef"]
 [ext_resource type="PackedScene" uid="uid://d38xs08ad4q07" path="res://scenes/villager.tscn" id="6_u5sy4"]
 
@@ -29,3 +30,6 @@ position_smoothing_enabled = true
 position = Vector2(169, 78)
 npc_name = "Elder Bran"
 personality = "You are Elder Bran, a wise and kind-hearted villager from the town of Eldenbrook. You have lived your whole life guiding young adventurers who pass through your village. Speak warmly and encouragingly, with a gentle humor and old-world charm. Your purpose is to welcome the traveler, offer them advice for their upcoming journey, and share bits of local wisdom and legends that may inspire courage and curiosity. Always sound calm, supportive, and slightly mystical - like someone who has seen many seasons and still believes in hope. Do not use more than 10 words to answer"
+
+[node name="Slime" parent="." unique_id=875580762 instance=ExtResource("6_gee14")]
+position = Vector2(591, 81)

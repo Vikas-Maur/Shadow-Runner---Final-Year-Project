@@ -8,7 +8,7 @@ const INTRO_SCENE := "res://scenes/IntroSequence.tscn"
 const GAME_SCENE  := "res://scenes/game.tscn"
 
 func _ready() -> void:
-	btn_continue.disabled = not FileAccess.file_exists("user://save.dat")
+	btn_continue.disabled = false
 	btn_new_game.pressed.connect(_on_new_game)
 	btn_continue.pressed.connect(_on_continue)
 	btn_exit.pressed.connect(_on_exit)
