@@ -1,0 +1,109 @@
+[gd_scene format=3 uid="uid://81jltfcj2vqa"]
+
+[ext_resource type="Script" uid="uid://c70cmw20re2se" path="res://scripts/intro_sequence.gd" id="1_ojggn"]
+[ext_resource type="Texture2D" uid="uid://bmdbhilm5a4mq" path="res://assets/images/story_textbox.png" id="1_w06hu"]
+[ext_resource type="Texture2D" uid="uid://b3yf2ss62vi4g" path="res://assets/images/continue_arrow.png" id="2_ojggn"]
+
+[sub_resource type="Animation" id="Animation_w06hu"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_ojggn"]
+resource_name = "fade_in"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_b8xv8"]
+resource_name = "fade_out"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_b8xv8"]
+_data = {
+&"RESET": SubResource("Animation_w06hu"),
+&"fade_in": SubResource("Animation_ojggn"),
+&"fade_out": SubResource("Animation_b8xv8")
+}
+
+[node name="Control" type="Control" unique_id=1623306818]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_ojggn")
+
+[node name="Panel" type="TextureRect" parent="." unique_id=360429613]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -11.0
+offset_top = -12.0
+offset_right = 1122.0
+offset_bottom = 611.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TextBox" type="TextureRect" parent="." unique_id=1548236417]
+layout_mode = 0
+offset_left = 571.0
+offset_top = 420.0
+offset_right = 1040.2856
+offset_bottom = 639.0
+texture = ExtResource("1_w06hu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StoryText" type="Label" parent="TextBox" unique_id=1323841955]
+layout_mode = 0
+offset_left = 53.0
+offset_top = 62.0
+offset_right = 414.0
+offset_bottom = 159.0
+autowrap_mode = 2
+
+[node name="Arrow" type="TextureRect" parent="." unique_id=1087006262]
+layout_mode = 0
+offset_left = 646.0
+offset_top = 330.0
+offset_right = 733.0
+offset_bottom = 417.0
+texture = ExtResource("2_ojggn")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=368950459]
+libraries/ = SubResource("AnimationLibrary_b8xv8")
