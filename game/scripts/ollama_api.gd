@@ -2,6 +2,7 @@ extends Node
 
 const OLLAMA_HOST = "127.0.0.1"
 const OLLAMA_PORT = 11434
+const MAX_RESPONSE_TOKENS = 500
 
 var current_stream_callback: Callable
 var current_final_callback: Callable
@@ -39,28 +40,32 @@ func _send_streaming_request(prompt: String, system_prompt: String):
 	
 	# Prepare streaming request with chat endpoint format
 	var json_data = {
-		"model": "phi3",
+		"model": "gemma2:9b",
 		"stream": true,
+		"options": {
+			"num_predict": MAX_RESPONSE_TOKENS
+		},
 		"messages": [
 			{
 				"role": "system",
-				"content": "You are Elder Bran, a wise and kind-hearted villager from the town of Eldenbrook. You have lived your whole life guiding young adventurers who pass through your village. Speak warmly and encouragingly, with a gentle humor and old-world charm. Your purpose is to welcome the traveler, offer them advice for their upcoming journey, and share bits of local wisdom and legends that may inspire courage and curiosity. Always sound calm, supportive, and slightly mystical - like someone who has seen many seasons and still believes in hope. Do not use more than 10 words to answer"
+				"content": system_prompt
 			},
 			{
 				"role": "user",
-				"content": "Hello!"
+				"content": prompt
 			}
 		]
 	}
 	
 	
 	var json_string = JSON.stringify(json_data)
+	var json_bytes = json_string.to_utf8_buffer()
 	
 	print("Request payload: ", json_data)
 	
 	var headers = [
 		"Content-Type: application/json",
-		"Content-Length: " + str(json_string.length())
+		"Content-Length: " + str(json_bytes.size())
 	]
 	
 	# Changed from /api/generate to /api/chat

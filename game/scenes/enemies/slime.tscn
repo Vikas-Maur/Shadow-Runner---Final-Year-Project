@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://4cmiu15hi5kl" path="res://scripts/slime.gd" id="1_fxbww"]
 [ext_resource type="Texture2D" uid="uid://bl53gpvg5mh1y" path="res://assets/sprites/slime_green.png" id="1_nuk1g"]
 [ext_resource type="PackedScene" uid="uid://dtrbka1ef726o" path="res://scenes/killzone.tscn" id="2_aiwyj"]
+[ext_resource type="PackedScene" uid="uid://d2w2i5h0lhc6l" path="res://scenes/npc.tscn" id="4_b58ev"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ayoyu"]
 atlas = ExtResource("1_nuk1g")
@@ -43,26 +44,31 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_u4xjq"]
 size = Vector2(10, 14)
 
-[node name="Slime" type="Node2D"]
+[node name="Slime" type="Node2D" unique_id=569542756]
 script = ExtResource("1_fxbww")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="NPC" parent="." unique_id=1067504287 instance=ExtResource("4_b58ev")]
+npc_name = "Vilemurk"
+personality = "**Vilemurk** is a dark, sentient slime that carries an unsettling and predatory presence. It speaks slowly and deliberately, almost like a whisper leaking from the shadows, as if it has all the time in the world. Rather than attacking immediately, it enjoys toying with its prey, savoring their fear and uncertainty. Vilemurk sees intruders not as enemies but as **prey wandering into its territory**, and it takes pleasure in reminding them that the darkness belongs to it. Its tone is calm, cold, and confident, often taunting those who try to hide with lines that imply it already knows where they are. It rarely raises its voice; instead, it speaks with quiet menace, stretching out words and pauses to build tension. Vilemurk behaves like an ancient hunter lurking within the shadows of the facility, patient and sadistic, believing that escape is only temporary and that eventually every runner will be swallowed by the darkness it controls.
+"
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=560729379]
 position = Vector2(0, -12)
 sprite_frames = SubResource("SpriteFrames_a8uf2")
 autoplay = "default"
 frame = 2
 frame_progress = 0.722655
 
-[node name="Killzone" parent="." instance=ExtResource("2_aiwyj")]
+[node name="Killzone" parent="." unique_id=919027613 instance=ExtResource("2_aiwyj")]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Killzone"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Killzone" unique_id=934929823]
 position = Vector2(0, -7)
 shape = SubResource("RectangleShape2D_u4xjq")
 
-[node name="RayCastRight" type="RayCast2D" parent="."]
+[node name="RayCastRight" type="RayCast2D" parent="." unique_id=39528599]
 position = Vector2(0, -7)
 target_position = Vector2(9, 0)
 
-[node name="RayCastLeft" type="RayCast2D" parent="."]
+[node name="RayCastLeft" type="RayCast2D" parent="." unique_id=543656044]
 position = Vector2(0, -7)
 target_position = Vector2(-9, 0)
