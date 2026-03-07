@@ -74,8 +74,7 @@ offset_right = 1122.0
 offset_bottom = 611.0
 grow_horizontal = 2
 grow_vertical = 2
-expand_mode = 1
-stretch_mode = 5
+expand_mode = 2
 
 [node name="TextBox" type="TextureRect" parent="." unique_id=1548236417]
 layout_mode = 0
