@@ -9,6 +9,9 @@
    - what will be changed,
    - what was implemented,
    - checkbox status (`[x]` when done).
+   - any newly added steps/features discovered during the task.
+   - if entirely new functionality is added during the task, create a separate section for it so a new agent can recover context quickly.
+   - if the work has already been committed, clear `plan.md` first and then rewrite it from the current committed state instead of appending another stale section.
 5. Validate changes with quick checks (scene/script wiring, signals, obvious regressions).
 6. Share a short summary of what changed and where.
 7. **Before any `git add`, `git commit`, or `git push`, ask the user explicitly.**

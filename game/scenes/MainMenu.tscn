@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://5rlercqs56yj" path="res://scripts/main_menu.gd" id="1_8a8k8"]
 [ext_resource type="Texture2D" uid="uid://bicmwv4s80nrf" path="res://assets/images/menu_background.png" id="1_yqorp"]
 [ext_resource type="Texture2D" uid="uid://c1tt3c34gjmqk" path="res://assets/images/shadow_runner_logo.png" id="2_0ykhv"]
+[ext_resource type="FontFile" uid="uid://dbjl1e6kdxpl6" path="res://assets/fonts/PixelOperator8.ttf" id="2_font"]
 [ext_resource type="Texture2D" uid="uid://27lsdsuwp6d3" path="res://assets/images/button_new_game_normal.png" id="3_ow34m"]
 [ext_resource type="Texture2D" uid="uid://j1thmabqbjg8" path="res://assets/images/button_new_game_hover.png" id="4_l72w3"]
 [ext_resource type="Texture2D" uid="uid://cwa5mbm6a46ve" path="res://assets/images/button_continue_normal.png" id="5_826wr"]
@@ -111,6 +112,49 @@ texture_pressed = ExtResource("8_8a8k8")
 texture_hover = ExtResource("8_8a8k8")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="DevLevelPanel" type="PanelContainer" parent="." unique_id=144477201]
+visible = false
+offset_left = 701.0
+offset_top = 319.0
+offset_right = 1014.0
+offset_bottom = 561.0
+
+[node name="MarginContainer" type="MarginContainer" parent="DevLevelPanel"]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DevLevelPanel/MarginContainer"]
+theme_override_constants/separation = 10
+
+[node name="DevTitle" type="Label" parent="DevLevelPanel/MarginContainer/VBoxContainer"]
+theme_override_colors/font_color = Color(1, 0.929412, 0.482353, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 8
+text = "DEV LEVEL JUMPS"
+horizontal_alignment = 1
+
+[node name="DevHint" type="Label" parent="DevLevelPanel/MarginContainer/VBoxContainer"]
+theme_override_colors/font_color = Color(0.92, 0.92, 0.92, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 8
+text = "Shortcuts: Ctrl+1 / Ctrl+2 / Ctrl+3"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DevLevel1Button" type="Button" parent="DevLevelPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+text = "Load Level 1"
+
+[node name="DevLevel2Button" type="Button" parent="DevLevelPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+text = "Load Level 2"
+
+[node name="DevLevel3Button" type="Button" parent="DevLevelPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+text = "Load Level 3"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1226829904]
 libraries/ = SubResource("AnimationLibrary_7la6k")

@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/levels/level_1_map.tscn" id="1_map"]
+[ext_resource type="PackedScene" uid="uid://d38xs08ad4q07" path="res://scenes/people/villager.tscn" id="2_villager"]
+[ext_resource type="PackedScene" uid="uid://cg0whk4rsjo73" path="res://scenes/enemies/slime.tscn" id="3_slime"]
+[ext_resource type="PackedScene" uid="uid://bgiktpctsjxyc" path="res://scenes/people/noble_man.tscn" id="4_noble_man"]
+[ext_resource type="PackedScene" uid="uid://cidth6g5xpgfb" path="res://scenes/people/nobel_woman.tscn" id="5_noble_woman"]
+
+[node name="Level1" type="Node2D"]
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(34, 37)
+
+[node name="World" parent="." instance=ExtResource("1_map")]
+
+[node name="Characters" type="Node2D" parent="."]
+
+[node name="Villager" parent="Characters" instance=ExtResource("2_villager")]
+position = Vector2(169, 78)
+npc_name = "Elder Bran"
+personality = "You are Elder Bran, a wise and kind-hearted villager from the town of Eldenbrook. You have lived your whole life guiding young adventurers who pass through your village. Speak warmly and encouragingly, with a gentle humor and old-world charm. Your purpose is to welcome the traveler, offer them advice for their upcoming journey, and share bits of local wisdom and legends that may inspire courage and curiosity. Always sound calm, supportive, and slightly mystical - like someone who has seen many seasons and still believes in hope. Do not use more than 10 words to answer"
+
+[node name="Slime" parent="Characters" instance=ExtResource("3_slime")]
+position = Vector2(591, 81)
+
+[node name="NobleMan" parent="Characters" instance=ExtResource("4_noble_man")]
+position = Vector2(259, 15)
+
+[node name="NobleWoman" parent="Characters" instance=ExtResource("5_noble_woman")]
+position = Vector2(332, 47)
