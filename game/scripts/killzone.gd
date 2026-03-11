@@ -13,6 +13,9 @@ const DamagePayload = preload("res://scripts/damage_payload.gd")
 var _damage_cooldowns: Dictionary = {}
 
 func _on_body_entered(body):
+	if _try_stomp_resolution(body):
+		return
+
 	if not body.has_method("apply_damage") and not body.has_method("take_damage"):
 		return
 
@@ -43,6 +46,34 @@ func _on_body_entered(body):
 	cooldown_timer.timeout.connect(func():
 		_damage_cooldowns.erase(body_id)
 	)
+
+func _try_stomp_resolution(body: Node) -> bool:
+	if not body.has_method("can_stomp_target") or not body.has_method("handle_stomp_attack"):
+		return false
+
+	var stomp_target = _find_damage_receiver()
+	if stomp_target == null:
+		return false
+
+	if not body.can_stomp_target(self):
+		return false
+
+	body.handle_stomp_attack(stomp_target)
+	return true
+
+func _find_damage_receiver() -> Node:
+	var parent = get_parent()
+	if parent == null:
+		return null
+
+	if parent.has_method("apply_damage"):
+		return parent
+
+	for child in parent.get_children():
+		if child.has_method("apply_damage"):
+			return child
+
+	return null
 
 
 func _on_timer_timeout():
