@@ -78,6 +78,8 @@ var current_npc = null
 var is_active = false
 var streaming_response = ""  # Accumulate streaming text
 var npc_ended_conversation = false
+signal dialogue_opened(npc)
+signal dialogue_closed(npc)
 
 func _ready():
 	visible = false
@@ -98,12 +100,18 @@ func open_dialogue(npc):
 	is_active = true
 	message_input.grab_focus()
 	get_tree().paused = true
+	dialogue_opened.emit(npc)
 
 func close_dialogue():
+	var closing_npc = current_npc
+	if closing_npc and closing_npc.has_method("end_interaction"):
+		closing_npc.end_interaction()
+
 	visible = false
 	is_active = false
 	current_npc = null
 	get_tree().paused = false
+	dialogue_closed.emit(closing_npc)
 
 func _on_send_pressed():
 	send_message()

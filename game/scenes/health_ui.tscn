@@ -1,0 +1,72 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/health_ui.gd" id="1_p6m7u"]
+
+[node name="HealthUI" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_p6m7u")
+
+[node name="PlayerHealthPanel" type="PanelContainer" parent="."]
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 220.0
+offset_bottom = 82.0
+
+[node name="Margin" type="MarginContainer" parent="PlayerHealthPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="PlayerHealthPanel/Margin"]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="PlayerHealthPanel/Margin/VBox"]
+layout_mode = 2
+text = "Player"
+
+[node name="HealthBar" type="ProgressBar" parent="PlayerHealthPanel/Margin/VBox"]
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="Value" type="Label" parent="PlayerHealthPanel/Margin/VBox"]
+layout_mode = 2
+text = "100 / 100"
+
+[node name="NPCHealthPanel" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 82.0
+
+[node name="Margin" type="MarginContainer" parent="NPCHealthPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="NPCHealthPanel/Margin"]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="NPCHealthPanel/Margin/VBox"]
+layout_mode = 2
+text = "NPC"
+
+[node name="HealthBar" type="ProgressBar" parent="NPCHealthPanel/Margin/VBox"]
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="Value" type="Label" parent="NPCHealthPanel/Margin/VBox"]
+layout_mode = 2
+text = "100 / 100"
