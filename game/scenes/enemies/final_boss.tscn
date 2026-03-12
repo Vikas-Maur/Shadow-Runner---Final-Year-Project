@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://dj6lw4q5tm5ph"]
+
+[ext_resource type="Script" uid="uid://bri3hc4j24wkp" path="res://scripts/final_boss.gd" id="1_3lb0h"]
+[ext_resource type="Texture2D" uid="uid://d25mr5kylx2jp" path="res://assets/sprites/FinalBoss.png" id="1_m80ou"]
+[ext_resource type="PackedScene" uid="uid://d2w2i5h0lhc6l" path="res://scenes/npc.tscn" id="2_j3lhf"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1vcc5"]
+atlas = ExtResource("1_m80ou")
+region = Rect2(0, 0, 142, 171)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u8pgw"]
+atlas = ExtResource("1_m80ou")
+region = Rect2(142, 0, 142, 171)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f8x14"]
+atlas = ExtResource("1_m80ou")
+region = Rect2(284, 0, 142, 171)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_4do5p"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1vcc5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u8pgw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f8x14")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p8nbu"]
+size = Vector2(54, 96)
+
+[node name="FinalBoss" type="CharacterBody2D" unique_id=158891240]
+z_index = 5
+script = ExtResource("1_3lb0h")
+construct_block_size = Vector2(12, 12)
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=753891041]
+sprite_frames = SubResource("SpriteFrames_4do5p")
+autoplay = "default"
+frame = 2
+frame_progress = 0.18425445
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1572901304]
+position = Vector2(0, 14)
+shape = SubResource("RectangleShape2D_p8nbu")
+
+[node name="CombatPivot" type="Node2D" parent="." unique_id=436233876]
+position = Vector2(0, -24)
+
+[node name="ProjectileSpawn" type="Marker2D" parent="CombatPivot" unique_id=2117836392]
+position = Vector2(52, 0)
+
+[node name="AIHooks" type="Node" parent="." unique_id=1970700351]
+
+[node name="NPC" parent="." unique_id=1817304209 instance=ExtResource("2_j3lhf")]
+npc_name = "Final Boss"
+personality = "The Final Boss speaks with cold contempt and absolute confidence, treating the player as a doomed intruder. Keep replies short, threatening, and controlled, with the sense that more attack patterns are still being held back."
+max_health = 600
+is_enemy = true
+is_boss = true
+enemy_type = &"final_boss"
+health_bar_visibility_range = 180.0

@@ -5,6 +5,7 @@ const SPEED = 130.0
 const JUMP_VELOCITY = -300.0
 const DamagePayload = preload("res://scripts/damage_payload.gd")
 const StompShockwaveScene = preload("res://scenes/effects/stomp_shockwave.tscn")
+const KnightProjectileScene = preload("res://scenes/effects/knight_projectile.tscn")
 
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var attack_pivot: Node2D = $AttackPivot
@@ -27,6 +28,13 @@ const StompShockwaveScene = preload("res://scenes/effects/stomp_shockwave.tscn")
 @export var sword_damage: int = 35
 @export var sword_attack_duration_seconds: float = 0.18
 @export var sword_attack_cooldown_seconds: float = 0.22
+@export var shoot_damage: int = 24
+@export var shoot_speed: float = 320.0
+@export var shoot_lifetime_seconds: float = 0.7
+@export var shoot_cooldown_seconds: float = 0.3
+@export var shoot_spawn_offset: Vector2 = Vector2(14, -12)
+@export var boss_death_animation_duration_seconds: float = 0.8
+@export var boss_death_hold_seconds: float = 2.0
 
 signal health_changed(current_health: int, max_health: int)
 signal died
@@ -42,14 +50,24 @@ var stomp_active: bool = false
 var facing_direction: int = 1
 var sword_attack_timer: float = 0.0
 var sword_attack_cooldown_timer: float = 0.0
+var shoot_cooldown_timer: float = 0.0
 var sword_hit_targets: Dictionary = {}
+var _death_animation_locked: bool = false
+var _death_restart_delay_seconds: float = 0.6
+var _last_damage_source: Node = null
+var _death_animation_elapsed: float = 0.0
 
 func _ready():
 	current_health = max_health
 	health_changed.emit(current_health, max_health)
+	_reset_death_state()
 	_update_attack_visuals()
 
 func _physics_process(delta):
+	if is_dead():
+		_process_death_state(delta)
+		return
+
 	var direction = Input.get_axis("move_left", "move_right")
 	var was_on_floor = is_on_floor()
 
@@ -104,6 +122,27 @@ func _physics_process(delta):
 
 	_process_sword_hits()
 
+func _process_death_state(delta: float) -> void:
+	velocity.x = move_toward(velocity.x, 0.0, SPEED)
+	if not is_on_floor():
+		velocity.y += gravity * delta
+	else:
+		velocity.y = max(velocity.y, 0.0)
+
+	if _death_animation_locked:
+		_death_animation_elapsed += delta
+		if _death_animation_elapsed < boss_death_animation_duration_seconds:
+			animated_sprite.play("die")
+		else:
+			animated_sprite.stop()
+			animated_sprite.animation = &"die"
+			animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(&"die") - 1
+
+	attack_pivot.rotation = 0.0
+	sword_sprite.visible = false
+	attack_area.monitoring = false
+	move_and_slide()
+
 func _update_timers(delta: float, was_on_floor: bool) -> void:
 	if was_on_floor:
 		coyote_timer = coyote_time_seconds
@@ -115,6 +154,7 @@ func _update_timers(delta: float, was_on_floor: bool) -> void:
 	dash_cooldown_timer = max(dash_cooldown_timer - delta, 0.0)
 	sword_attack_timer = max(sword_attack_timer - delta, 0.0)
 	sword_attack_cooldown_timer = max(sword_attack_cooldown_timer - delta, 0.0)
+	shoot_cooldown_timer = max(shoot_cooldown_timer - delta, 0.0)
 
 func _collect_input(direction: float, was_on_floor: bool) -> void:
 	if Input.is_action_just_pressed("jump"):
@@ -125,6 +165,9 @@ func _collect_input(direction: float, was_on_floor: bool) -> void:
 
 	if Input.is_action_just_pressed("attack"):
 		_start_sword_attack()
+
+	if Input.is_action_just_pressed("shoot"):
+		_start_shoot(direction)
 
 	if Input.is_action_just_pressed("move_down") and not was_on_floor and not _is_dashing() and not _is_sword_attacking():
 		stomp_active = true
@@ -158,6 +201,30 @@ func _start_dash(direction: float) -> void:
 
 func _is_dashing() -> bool:
 	return dash_timer > 0.0
+
+func _start_shoot(direction: float) -> void:
+	if shoot_cooldown_timer > 0.0 or _is_dashing() or _is_sword_attacking() or stomp_active:
+		return
+
+	if direction > 0.0:
+		facing_direction = 1
+	elif direction < 0.0:
+		facing_direction = -1
+
+	var projectile = KnightProjectileScene.instantiate()
+	var scene_root = get_tree().current_scene if get_tree().current_scene != null else get_parent()
+	scene_root.add_child(projectile)
+	projectile.global_position = global_position + Vector2(shoot_spawn_offset.x * facing_direction, shoot_spawn_offset.y)
+	if projectile.has_method("configure"):
+		projectile.configure(
+			self,
+			Vector2(facing_direction, 0.0),
+			_build_attack_damage(shoot_damage, &"projectile"),
+			shoot_speed,
+			shoot_lifetime_seconds
+		)
+
+	shoot_cooldown_timer = shoot_cooldown_seconds
 
 func _start_sword_attack() -> void:
 	if sword_attack_cooldown_timer > 0.0 or _is_sword_attacking() or _is_dashing():
@@ -275,9 +342,11 @@ func apply_damage(damage_input: Variant, _source: Node = null):
 	if resolved_damage <= 0:
 		return
 
+	_last_damage_source = _source
 	current_health = max(current_health - resolved_damage, 0)
 	health_changed.emit(current_health, max_health)
 	if current_health == 0:
+		_prepare_death_state(_source)
 		died.emit()
 
 func heal(amount: int):
@@ -292,10 +361,53 @@ func restore_saved_health(saved_health: int) -> void:
 		return
 
 	current_health = int(clamp(saved_health, 0, max_health))
+	if current_health > 0:
+		_reset_death_state()
 	health_changed.emit(current_health, max_health)
 
 func is_dead() -> bool:
 	return current_health <= 0
+
+func get_death_restart_delay_seconds() -> float:
+	return _death_restart_delay_seconds
+
+func was_killed_by_final_boss() -> bool:
+	return _is_final_boss_source(_last_damage_source)
+
+func _prepare_death_state(source: Node) -> void:
+	dash_timer = 0.0
+	dash_cooldown_timer = 0.0
+	sword_attack_timer = 0.0
+	sword_attack_cooldown_timer = 0.0
+	shoot_cooldown_timer = 0.0
+	jump_buffer_timer = 0.0
+	coyote_timer = 0.0
+	stomp_active = false
+	sword_hit_targets.clear()
+	_update_attack_visuals()
+
+	if _is_final_boss_source(source):
+		_death_animation_locked = true
+		_death_animation_elapsed = 0.0
+		_death_restart_delay_seconds = boss_death_animation_duration_seconds + boss_death_hold_seconds
+		animated_sprite.play("die")
+	else:
+		_death_animation_locked = false
+		_death_restart_delay_seconds = 0.6
+
+func _reset_death_state() -> void:
+	_death_animation_locked = false
+	_death_restart_delay_seconds = 0.6
+	_last_damage_source = null
+	_death_animation_elapsed = 0.0
+
+func _is_final_boss_source(source: Node) -> bool:
+	if source == null:
+		return false
+	if source.has_method("is_final_boss") and source.is_final_boss():
+		return true
+
+	return false
 
 func _resolve_damage_amount(damage_input: Variant) -> int:
 	if damage_input is int:

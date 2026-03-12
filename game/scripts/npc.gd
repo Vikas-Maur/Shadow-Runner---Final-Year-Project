@@ -17,6 +17,7 @@ var direction = 1
 @export var sword_damage_multiplier: float = 1.0
 @export var stomp_damage_multiplier: float = 1.0
 @export var shockwave_damage_multiplier: float = 1.0
+@export var projectile_damage_multiplier: float = 1.0
 
 var player_in_range = false
 var player_reference = null
@@ -199,5 +200,7 @@ func _get_damage_multiplier_for_attack(attack_type: StringName) -> float:
 			return stomp_damage_multiplier
 		&"shockwave":
 			return shockwave_damage_multiplier
+		&"projectile":
+			return projectile_damage_multiplier
 		_:
 			return default_damage_multiplier

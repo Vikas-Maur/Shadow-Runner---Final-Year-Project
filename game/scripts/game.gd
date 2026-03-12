@@ -2,6 +2,7 @@ extends Node2D
 
 const DEFAULT_CAMERA_BOTTOM_LIMIT := 120
 const AUTO_SAVE_INTERVAL_SECONDS := 0.75
+const DEATH_RESTART_DELAY_SECONDS := 0.6
 
 @onready var level_root: Node2D = $LevelRoot
 @onready var player: CharacterBody2D = $Player
@@ -12,10 +13,12 @@ const AUTO_SAVE_INTERVAL_SECONDS := 0.75
 var _loaded_level: Node = null
 var _autosave_timer: float = 0.0
 var _tutorial_message_serial: int = 0
+var _death_restart_in_progress: bool = false
 
 func _ready() -> void:
 	set_process_input(LevelManager.are_development_tools_enabled())
 	tutorial_hint.visible = false
+	_connect_player_death()
 	_load_current_level()
 
 func _input(event: InputEvent) -> void:
@@ -36,6 +39,10 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	_save_player_progress()
+
+func _connect_player_death() -> void:
+	if player != null and player.has_signal("died") and not player.died.is_connected(_on_player_died):
+		player.died.connect(_on_player_died)
 
 func _load_current_level() -> void:
 	var level_scene_path := LevelManager.get_current_level_scene_path()
@@ -114,8 +121,28 @@ func _save_player_progress() -> void:
 		return
 	if player == null or not is_instance_valid(player):
 		return
+	if player.has_method("is_dead") and player.is_dead():
+		return
 
 	LevelManager.save_player_progress(_get_loaded_level_index(), player.global_position, int(player.get("current_health")))
+
+func _on_player_died() -> void:
+	if _death_restart_in_progress:
+		return
+
+	_death_restart_in_progress = true
+	Engine.time_scale = 0.5
+
+	var restart_delay := DEATH_RESTART_DELAY_SECONDS
+	if player != null and player.has_method("get_death_restart_delay_seconds"):
+		restart_delay = max(float(player.call("get_death_restart_delay_seconds")), 0.1)
+
+	var timer := get_tree().create_timer(restart_delay)
+	timer.timeout.connect(func():
+		Engine.time_scale = 1.0
+		if get_tree() != null:
+			get_tree().reload_current_scene()
+	)
 
 func _get_loaded_level_index() -> int:
 	if _loaded_level == null or not is_instance_valid(_loaded_level):
