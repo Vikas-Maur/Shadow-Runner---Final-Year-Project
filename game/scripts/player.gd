@@ -38,6 +38,7 @@ const KnightProjectileScene = preload("res://scenes/effects/knight_projectile.ts
 
 signal health_changed(current_health: int, max_health: int)
 signal died
+signal attack_performed(attack_type: StringName, details: Dictionary)
 
 # Get the gravity from the project settings to be synced with RigidBody nodes.
 var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
@@ -56,6 +57,9 @@ var _death_animation_locked: bool = false
 var _death_restart_delay_seconds: float = 0.6
 var _last_damage_source: Node = null
 var _death_animation_elapsed: float = 0.0
+var last_attack_snapshot: Dictionary = {
+	"type": "none"
+}
 
 func _ready():
 	current_health = max_health
@@ -172,6 +176,9 @@ func _collect_input(direction: float, was_on_floor: bool) -> void:
 	if Input.is_action_just_pressed("move_down") and not was_on_floor and not _is_dashing() and not _is_sword_attacking():
 		stomp_active = true
 		jump_buffer_timer = 0.0
+		_record_attack(&"stomp", {
+			"phase": "dive_start"
+		})
 
 func _can_consume_jump(was_on_floor: bool) -> bool:
 	if jump_buffer_timer <= 0.0 or _is_dashing():
@@ -225,6 +232,9 @@ func _start_shoot(direction: float) -> void:
 		)
 
 	shoot_cooldown_timer = shoot_cooldown_seconds
+	_record_attack(&"projectile", {
+		"cooldown_seconds": shoot_cooldown_seconds
+	})
 
 func _start_sword_attack() -> void:
 	if sword_attack_cooldown_timer > 0.0 or _is_sword_attacking() or _is_dashing():
@@ -236,6 +246,9 @@ func _start_sword_attack() -> void:
 	sword_hit_targets.clear()
 	_update_attack_visuals()
 	_process_sword_hits()
+	_record_attack(&"sword", {
+		"duration_seconds": sword_attack_duration_seconds
+	})
 
 func _is_sword_attacking() -> bool:
 	return sword_attack_timer > 0.0
@@ -254,6 +267,9 @@ func handle_stomp_attack(target: Node) -> void:
 	target.apply_damage(_build_attack_damage(stomp_damage, &"stomp"), self)
 	_spawn_stomp_shockwave(target.global_position)
 	velocity.y = stomp_bounce_velocity
+	_record_attack(&"stomp", {
+		"phase": "impact"
+	})
 
 func is_stomping() -> bool:
 	return stomp_active
@@ -431,3 +447,56 @@ func _resolve_damage_amount(damage_input: Variant) -> int:
 		return max(resolved, minimum_damage)
 
 	return 0
+
+func get_last_attack_snapshot() -> Dictionary:
+	return last_attack_snapshot.duplicate(true)
+
+func get_combat_state_snapshot() -> Dictionary:
+	return {
+		"position": _vector_to_dict(global_position),
+		"velocity": _vector_to_dict(velocity),
+		"health": current_health,
+		"max_health": max_health,
+		"health_ratio": _safe_ratio(current_health, max_health),
+		"grounded": is_on_floor(),
+		"facing_direction": facing_direction,
+		"stomp_active": stomp_active,
+		"dash_active": _is_dashing(),
+		"sword_attacking": _is_sword_attacking(),
+		"shoot_cooldown_remaining": _round_number(shoot_cooldown_timer),
+		"dash_cooldown_remaining": _round_number(dash_cooldown_timer),
+		"last_attack": get_last_attack_snapshot()
+	}
+
+func _record_attack(attack_type: StringName, details: Dictionary = {}) -> void:
+	var snapshot := {
+		"type": String(attack_type),
+		"time_seconds": _round_number(float(Time.get_ticks_msec()) / 1000.0),
+		"position": _vector_to_dict(global_position),
+		"facing_direction": facing_direction,
+		"grounded": is_on_floor(),
+		"stomp_active": stomp_active,
+		"dash_active": _is_dashing(),
+		"sword_attacking": _is_sword_attacking()
+	}
+
+	for key in details.keys():
+		snapshot[key] = details[key]
+
+	last_attack_snapshot = snapshot
+	attack_performed.emit(attack_type, snapshot)
+
+func _vector_to_dict(value: Vector2) -> Dictionary:
+	return {
+		"x": _round_number(value.x),
+		"y": _round_number(value.y)
+	}
+
+func _round_number(value: float) -> float:
+	return snappedf(value, 0.01)
+
+func _safe_ratio(value: int, maximum_value: int) -> float:
+	if maximum_value <= 0:
+		return 0.0
+
+	return _round_number(float(value) / float(maximum_value))
