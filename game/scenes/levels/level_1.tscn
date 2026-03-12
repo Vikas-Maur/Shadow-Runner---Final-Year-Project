@@ -1,12 +1,14 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/levels/level_1_map.tscn" id="1_map"]
 [ext_resource type="PackedScene" uid="uid://d38xs08ad4q07" path="res://scenes/people/villager.tscn" id="2_villager"]
 [ext_resource type="PackedScene" uid="uid://cg0whk4rsjo73" path="res://scenes/enemies/slime.tscn" id="3_slime"]
 [ext_resource type="PackedScene" uid="uid://bgiktpctsjxyc" path="res://scenes/people/noble_man.tscn" id="4_noble_man"]
 [ext_resource type="PackedScene" uid="uid://cidth6g5xpgfb" path="res://scenes/people/nobel_woman.tscn" id="5_noble_woman"]
+[ext_resource type="Script" path="res://scripts/game_level.gd" id="6_level"]
 
 [node name="Level1" type="Node2D"]
+script = ExtResource("6_level")
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(34, 37)

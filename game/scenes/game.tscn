@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cuv4vme4rwno0"]
 
 [ext_resource type="PackedScene" uid="uid://dqnaqj8yb6hwd" path="res://scenes/player.tscn" id="1_rbmkf"]
-[ext_resource type="Script" path="res://scripts/game.gd" id="2_game"]
+[ext_resource type="Script" uid="uid://brqqg1g8yni34" path="res://scripts/game.gd" id="2_game"]
 [ext_resource type="PackedScene" uid="uid://titgd3vuwxif" path="res://scenes/dialogue_ui.tscn" id="5_iywne"]
 [ext_resource type="PackedScene" path="res://scenes/health_ui.tscn" id="5_y0g1h"]
 [ext_resource type="Script" uid="uid://nko8c6jlmy1d" path="res://scripts/ollama_api.gd" id="6_p57ef"]
@@ -20,7 +20,7 @@ script = ExtResource("6_p57ef")
 position = Vector2(0, -7)
 zoom = Vector2(4, 4)
 limit_top = -9999999
-limit_bottom = 121
+limit_bottom = 120
 limit_smoothed = true
 position_smoothing_enabled = true
 

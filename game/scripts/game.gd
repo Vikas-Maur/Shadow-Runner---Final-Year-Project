@@ -1,7 +1,10 @@
 extends Node2D
 
+const DEFAULT_CAMERA_BOTTOM_LIMIT := 120
+
 @onready var level_root: Node2D = $LevelRoot
 @onready var player: CharacterBody2D = $Player
+@onready var camera: Camera2D = $Player/Camera2D
 
 var _loaded_level: Node = null
 
@@ -26,6 +29,7 @@ func _load_current_level() -> void:
 	_loaded_level = level_scene.instantiate()
 	level_root.add_child(_loaded_level)
 	_move_player_to_spawn()
+	_apply_level_camera_settings()
 
 func _move_player_to_spawn() -> void:
 	if _loaded_level == null:
@@ -35,3 +39,11 @@ func _move_player_to_spawn() -> void:
 	if spawn_node is Node2D:
 		player.global_position = spawn_node.global_position
 		player.velocity = Vector2.ZERO
+
+func _apply_level_camera_settings() -> void:
+	var camera_bottom_limit := DEFAULT_CAMERA_BOTTOM_LIMIT
+	var game_level := _loaded_level as GameLevel
+	if game_level != null:
+		camera_bottom_limit = game_level.camera_bottom_limit
+
+	camera.limit_bottom = camera_bottom_limit

@@ -1,10 +1,13 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://bm76lap8iywqb"]
 
-[ext_resource type="PackedScene" path="res://scenes/levels/level_3_map.tscn" id="1_map"]
+[ext_resource type="PackedScene" uid="uid://b1tte0ll333sm" path="res://scenes/levels/level_3_map.tscn" id="1_map"]
+[ext_resource type="Script" uid="uid://b3vovfgs6n256" path="res://scripts/game_level.gd" id="2_level"]
 
-[node name="Level3" type="Node2D"]
+[node name="Level3" type="Node2D" unique_id=1535300325]
+script = ExtResource("2_level")
+camera_bottom_limit = 405
 
-[node name="PlayerSpawn" type="Marker2D" parent="."]
+[node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1041113102]
 position = Vector2(32, 32)
 
-[node name="World" parent="." instance=ExtResource("1_map")]
+[node name="World" parent="." unique_id=1673358734 instance=ExtResource("1_map")]
