@@ -29,6 +29,9 @@
 
 - Keep gameplay logic in scripts and scene data in `.tscn` files.
 - Build reusable systems (health, damage, interaction, UI binding) instead of hardcoding per scene.
+- For composite enemies, keep root-level combat methods (`apply_damage()`, `is_dead()`, `take_damage()`) forwarding to the health-bearing child so hit detection can stay generic.
+- Keep persistent progression/session state in an autoloaded manager so menu, levels, and one-time tutorial flags share a single source of truth.
+- Use stable per-level node keys for persistent world state such as collected items, defeated enemies, and resumed checkpoints.
 - Use exported variables for tuning gameplay values in the editor.
 - Prefer signals/events for communication between nodes; avoid tight coupling.
 - Keep backward compatibility when extending systems (for example wrapper methods like `take_damage()`).

@@ -20,6 +20,9 @@ func _ready():
 	_select_active_npc()
 	get_tree().node_added.connect(_on_node_added)
 
+func _process(_delta):
+	_select_active_npc()
+
 func _connect_player():
 	_player = get_tree().root.find_child("Player", true, false)
 	if _player and _player.has_signal("health_changed"):
@@ -55,14 +58,28 @@ func _register_npc(npc):
 	if npc.has_signal("boss_fight_state_changed") and not npc.boss_fight_state_changed.is_connected(_on_npc_state_changed):
 		npc.boss_fight_state_changed.connect(_on_npc_state_changed)
 
+	if npc.has_signal("player_range_changed") and not npc.player_range_changed.is_connected(_on_npc_state_changed):
+		npc.player_range_changed.connect(_on_npc_state_changed)
+
 	var died_callable = _on_npc_died.bind(npc)
 	if npc.has_signal("died") and not npc.died.is_connected(died_callable):
 		npc.died.connect(died_callable)
 
 func _on_node_added(node):
+	call_deferred("_register_dynamic_health_npcs", node)
+
+func _register_dynamic_health_npcs(node):
+	if node == null or not is_instance_valid(node):
+		return
+
 	if node.is_in_group("health_npcs"):
 		_register_npc(node)
-		_select_active_npc()
+
+	for child in node.get_children():
+		if child.is_in_group("health_npcs"):
+			_register_npc(child)
+
+	_select_active_npc()
 
 func _on_player_health_changed(_current_health: int, _max_health: int):
 	_update_player_bar()
@@ -101,6 +118,7 @@ func _on_npc_died(npc):
 func _select_active_npc():
 	var npcs = get_tree().get_nodes_in_group("health_npcs")
 	var interacting_npc = null
+	var nearby_enemy = null
 	var boss_npc = null
 
 	for npc in npcs:
@@ -114,11 +132,24 @@ func _select_active_npc():
 		for npc in npcs:
 			if npc.has_method("is_dead") and npc.is_dead():
 				continue
+			if npc.has_method("should_show_health_bar") and npc.should_show_health_bar(_player):
+				nearby_enemy = npc
+				break
+
+	if interacting_npc == null and nearby_enemy == null:
+		for npc in npcs:
+			if npc.has_method("is_dead") and npc.is_dead():
+				continue
 			if npc.is_enemy and npc.is_boss and npc.boss_fight_active:
 				boss_npc = npc
 				break
 
-	_tracked_npc = interacting_npc if interacting_npc != null else boss_npc
+	if interacting_npc != null:
+		_tracked_npc = interacting_npc
+	elif nearby_enemy != null:
+		_tracked_npc = nearby_enemy
+	else:
+		_tracked_npc = boss_npc
 	if _tracked_npc == null:
 		npc_panel.visible = false
 		return
@@ -127,8 +158,9 @@ func _select_active_npc():
 
 func _update_npc_bar(npc):
 	var show_for_interaction = npc.is_interacting_with_player
+	var show_for_enemy_proximity = npc.has_method("should_show_health_bar") and npc.should_show_health_bar(_player)
 	var show_for_boss_fight = npc.is_enemy and npc.is_boss and npc.boss_fight_active
-	npc_panel.visible = show_for_interaction or show_for_boss_fight
+	npc_panel.visible = show_for_interaction or show_for_enemy_proximity or show_for_boss_fight
 	if not npc_panel.visible:
 		return
 

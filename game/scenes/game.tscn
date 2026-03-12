@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://titgd3vuwxif" path="res://scenes/dialogue_ui.tscn" id="5_iywne"]
 [ext_resource type="PackedScene" path="res://scenes/health_ui.tscn" id="5_y0g1h"]
 [ext_resource type="Script" uid="uid://nko8c6jlmy1d" path="res://scripts/ollama_api.gd" id="6_p57ef"]
+[ext_resource type="FontFile" uid="uid://dbjl1e6kdxpl6" path="res://assets/fonts/PixelOperator8.ttf" id="7_fm1v0"]
 
 [node name="Game" type="Node2D" unique_id=172901258]
 script = ExtResource("2_game")
@@ -27,3 +28,31 @@ position_smoothing_enabled = true
 [node name="LevelRoot" type="Node2D" parent="." unique_id=1538615541]
 
 [node name="HealthUI" parent="." unique_id=376954420 instance=ExtResource("5_y0g1h")]
+
+[node name="TutorialLayer" type="CanvasLayer" parent="."]
+layer = 9
+
+[node name="TutorialHint" type="PanelContainer" parent="TutorialLayer"]
+visible = false
+anchors_preset = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 26.0
+offset_right = 180.0
+offset_bottom = 82.0
+
+[node name="MarginContainer" type="MarginContainer" parent="TutorialLayer/TutorialHint"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="TutorialLabel" type="Label" parent="TutorialLayer/TutorialHint/MarginContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_fm1v0")
+theme_override_font_sizes/font_size = 8
+text = "Tutorial"
+horizontal_alignment = 1
+autowrap_mode = 2

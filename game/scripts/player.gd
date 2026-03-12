@@ -4,6 +4,7 @@ extends CharacterBody2D
 const SPEED = 130.0
 const JUMP_VELOCITY = -300.0
 const DamagePayload = preload("res://scripts/damage_payload.gd")
+const StompShockwaveScene = preload("res://scenes/effects/stomp_shockwave.tscn")
 
 @onready var animated_sprite = $AnimatedSprite2D
 @onready var attack_pivot: Node2D = $AttackPivot
@@ -19,6 +20,9 @@ const DamagePayload = preload("res://scripts/damage_payload.gd")
 @export var stomp_fall_speed: float = 420.0
 @export var stomp_bounce_velocity: float = -220.0
 @export var stomp_damage: int = 60
+@export var stomp_shockwave_damage: int = 25
+@export var stomp_shockwave_radius: float = 28.0
+@export var stomp_shockwave_lifetime_seconds: float = 0.18
 @export var stomp_height_grace: float = 10.0
 @export var sword_damage: int = 35
 @export var sword_attack_duration_seconds: float = 0.18
@@ -90,6 +94,10 @@ func _physics_process(delta):
 		animated_sprite.play("jump")
 
 	move_and_slide()
+
+	var landed_after_stomp = stomp_active and not was_on_floor and is_on_floor()
+	if landed_after_stomp:
+		_spawn_stomp_shockwave(global_position)
 
 	if is_on_floor():
 		stomp_active = false
@@ -176,7 +184,8 @@ func handle_stomp_attack(target: Node) -> void:
 		return
 
 	stomp_active = false
-	target.apply_damage(stomp_damage, self)
+	target.apply_damage(_build_attack_damage(stomp_damage, &"stomp"), self)
+	_spawn_stomp_shockwave(target.global_position)
 	velocity.y = stomp_bounce_velocity
 
 func is_stomping() -> bool:
@@ -211,7 +220,7 @@ func _process_sword_hits() -> void:
 			continue
 
 		sword_hit_targets[target_id] = true
-		damage_target.apply_damage(sword_damage, self)
+		damage_target.apply_damage(_build_attack_damage(sword_damage, &"sword"), self)
 
 func _resolve_damage_receiver(node: Node) -> Node:
 	var candidates: Array[Node] = [node]
@@ -232,6 +241,28 @@ func _resolve_damage_receiver(node: Node) -> Node:
 			return candidate
 
 	return null
+
+func _build_attack_damage(flat_damage: int, attack_type: StringName) -> Dictionary:
+	return {
+		"flat_damage": flat_damage,
+		"attack_type": String(attack_type)
+	}
+
+func _spawn_stomp_shockwave(origin: Vector2) -> void:
+	if stomp_shockwave_damage <= 0:
+		return
+
+	var shockwave = StompShockwaveScene.instantiate()
+	var scene_root = get_tree().current_scene if get_tree().current_scene != null else get_parent()
+	scene_root.add_child(shockwave)
+	shockwave.global_position = origin
+	if shockwave.has_method("configure"):
+		shockwave.configure(
+			self,
+			_build_attack_damage(stomp_shockwave_damage, &"shockwave"),
+			stomp_shockwave_radius,
+			stomp_shockwave_lifetime_seconds
+		)
 
 func take_damage(amount: int):
 	apply_damage(amount)
@@ -254,6 +285,13 @@ func heal(amount: int):
 		return
 
 	current_health = min(current_health + amount, max_health)
+	health_changed.emit(current_health, max_health)
+
+func restore_saved_health(saved_health: int) -> void:
+	if saved_health < 0:
+		return
+
+	current_health = int(clamp(saved_health, 0, max_health))
 	health_changed.emit(current_health, max_health)
 
 func is_dead() -> bool:

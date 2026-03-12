@@ -54,6 +54,11 @@ personality = "**Vilemurk** is a dark, sentient slime that carries an unsettling
 max_health = 250
 is_enemy = true
 is_boss = true
+enemy_type = &"slime_boss"
+health_bar_visibility_range = 72.0
+sword_damage_multiplier = 0.85
+stomp_damage_multiplier = 1.2
+shockwave_damage_multiplier = 0.9
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=560729379]
 position = Vector2(0, -12)

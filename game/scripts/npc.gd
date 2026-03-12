@@ -11,6 +11,12 @@ var direction = 1
 @export var max_health: int = 100
 @export var is_enemy: bool = false
 @export var is_boss: bool = false
+@export var enemy_type: StringName = &"neutral"
+@export var health_bar_visibility_range: float = 48.0
+@export var default_damage_multiplier: float = 1.0
+@export var sword_damage_multiplier: float = 1.0
+@export var stomp_damage_multiplier: float = 1.0
+@export var shockwave_damage_multiplier: float = 1.0
 
 var player_in_range = false
 var player_reference = null
@@ -25,6 +31,7 @@ signal health_changed(current_health: int, max_health: int)
 signal died
 signal interaction_state_changed(active: bool)
 signal boss_fight_state_changed(active: bool)
+signal player_range_changed(in_range: bool)
 
 func _ready():
 	add_to_group("health_npcs")
@@ -41,6 +48,7 @@ func _on_body_entered(body):
 		player_in_range = true
 		player_reference = body
 		prompt_label.visible = true
+		player_range_changed.emit(true)
 		if is_enemy and is_boss:
 			start_boss_fight()
 
@@ -49,6 +57,7 @@ func _on_body_exited(body):
 		player_in_range = false
 		player_reference = null
 		prompt_label.visible = false
+		player_range_changed.emit(false)
 		if is_enemy and is_boss and not is_interacting_with_player:
 			end_boss_fight()
 
@@ -93,7 +102,7 @@ func apply_damage(damage_input: Variant, _source: Node = null):
 	if is_dead():
 		return
 
-	var resolved_damage = _resolve_damage_amount(damage_input)
+	var resolved_damage = _resolve_damage_amount(_scale_damage_input_for_attack_type(damage_input))
 	if resolved_damage <= 0:
 		return
 
@@ -114,6 +123,12 @@ func heal(amount: int):
 
 func is_dead() -> bool:
 	return current_health <= 0
+
+func should_show_health_bar(player: Node2D) -> bool:
+	if not is_enemy or player == null or is_dead():
+		return false
+
+	return global_position.distance_to(player.global_position) <= health_bar_visibility_range
 
 func _resolve_damage_amount(damage_input: Variant) -> int:
 	if damage_input is int:
@@ -137,3 +152,52 @@ func _resolve_damage_amount(damage_input: Variant) -> int:
 		return max(resolved, minimum_damage)
 
 	return 0
+
+func _scale_damage_input_for_attack_type(damage_input: Variant) -> Variant:
+	if not is_enemy:
+		return damage_input
+
+	var attack_type = _extract_attack_type(damage_input)
+	var multiplier = _get_damage_multiplier_for_attack(attack_type)
+	if is_equal_approx(multiplier, 1.0):
+		return damage_input
+
+	if damage_input is int:
+		return max(int(round(float(damage_input) * multiplier)), 0)
+
+	if damage_input is float:
+		return max(float(damage_input) * multiplier, 0.0)
+
+	if damage_input is Dictionary:
+		var scaled_damage: Dictionary = damage_input.duplicate(true)
+		if scaled_damage.has("flat_damage"):
+			scaled_damage["flat_damage"] = max(int(round(float(scaled_damage["flat_damage"]) * multiplier)), 0)
+		elif scaled_damage.has("flat"):
+			scaled_damage["flat"] = max(int(round(float(scaled_damage["flat"]) * multiplier)), 0)
+
+		if scaled_damage.has("minimum_damage"):
+			scaled_damage["minimum_damage"] = max(int(round(float(scaled_damage["minimum_damage"]) * multiplier)), 0)
+		if scaled_damage.has("max_health_percent"):
+			scaled_damage["max_health_percent"] = max(float(scaled_damage["max_health_percent"]) * multiplier, 0.0)
+		if scaled_damage.has("current_health_percent"):
+			scaled_damage["current_health_percent"] = max(float(scaled_damage["current_health_percent"]) * multiplier, 0.0)
+		return scaled_damage
+
+	return damage_input
+
+func _extract_attack_type(damage_input: Variant) -> StringName:
+	if damage_input is Dictionary:
+		return StringName(String(damage_input.get("attack_type", "")))
+
+	return &"default"
+
+func _get_damage_multiplier_for_attack(attack_type: StringName) -> float:
+	match attack_type:
+		&"sword":
+			return sword_damage_multiplier
+		&"stomp":
+			return stomp_damage_multiplier
+		&"shockwave":
+			return shockwave_damage_multiplier
+		_:
+			return default_damage_multiplier
