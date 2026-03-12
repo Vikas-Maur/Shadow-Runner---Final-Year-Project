@@ -6737,5 +6737,5 @@ text = "Great job!"
 horizontal_alignment = 1
 metadata/_edit_use_anchors_ = true
 
-[node name="Portal" parent="." instance=ExtResource("24_portal")]
-position = Vector2(842, -111)
+[node name="Portal" parent="." unique_id=1222135487 instance=ExtResource("24_portal")]
+position = Vector2(2223, 79)

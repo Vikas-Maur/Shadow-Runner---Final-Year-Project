@@ -9,7 +9,16 @@ const DEFAULT_CAMERA_BOTTOM_LIMIT := 120
 var _loaded_level: Node = null
 
 func _ready() -> void:
+	set_process_input(LevelManager.are_development_tools_enabled())
 	_load_current_level()
+
+func _input(event: InputEvent) -> void:
+	if not LevelManager.are_development_tools_enabled():
+		return
+
+	if event is InputEventKey and event.pressed and not event.echo and event.ctrl_pressed and event.keycode == KEY_E:
+		if _teleport_player_to_dev_target():
+			get_viewport().set_input_as_handled()
 
 func _load_current_level() -> void:
 	var level_scene_path := LevelManager.get_current_level_scene_path()
@@ -47,3 +56,12 @@ func _apply_level_camera_settings() -> void:
 		camera_bottom_limit = game_level.camera_bottom_limit
 
 	camera.limit_bottom = camera_bottom_limit
+
+func _teleport_player_to_dev_target() -> bool:
+	var game_level := _loaded_level as GameLevel
+	if game_level == null:
+		return false
+
+	player.global_position = game_level.get_dev_teleport_global_position()
+	player.velocity = Vector2.ZERO
+	return true

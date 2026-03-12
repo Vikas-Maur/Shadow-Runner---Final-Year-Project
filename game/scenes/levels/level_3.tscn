@@ -6,6 +6,7 @@
 [node name="Level3" type="Node2D" unique_id=1535300325]
 script = ExtResource("2_level")
 camera_bottom_limit = 405
+dev_teleport_position = Vector2(1505, 119)
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=1041113102]
 position = Vector2(32, 32)
