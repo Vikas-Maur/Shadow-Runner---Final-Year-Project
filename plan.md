@@ -26,3 +26,30 @@
 
 - No commit actions were taken.
 - The workspace does not currently expose a `godot` or `godot4` executable, so automated script parsing could not be run from the terminal.
+
+## Coin Score HUD And Persistence
+
+### Planned
+
+- [x] Move the coin counter to a single top-center HUD in the main game scene so it remains consistent across levels.
+- [x] Reuse `LevelManager` score and collected-item persistence for coin pickups and continue state instead of maintaining a separate map-local score path.
+- [x] Remove obsolete per-level score UI nodes that could drift from the persistent state or duplicate the HUD.
+
+### Implemented
+
+- Added a reusable `GameManager` `CanvasLayer` HUD to `game/scenes/game.tscn` with a top-center coin counter styled with the existing pixel font.
+- Updated `game/scripts/game_manager.gd` to read the current coin total directly from `LevelManager` on load and refresh from the shared `score_changed` signal.
+- Updated `game/scripts/coin.gd` so pickups award an exported `score_amount` directly through `LevelManager.add_score()`, while continuing to use the saved collected-item keys to prevent duplicate pickups after reload/continue.
+- Removed the old embedded `GameManager` and `ScoreLabel` nodes from the level map scenes so the main HUD is the only score display.
+- Refined the HUD styling so the score now uses a larger white outlined font and displays a coin icon from `game/assets/sprites/coin.png` beside the text for better contrast and readability.
+- Simplified the HUD presentation to icon-plus-count only and removed the score panel background so the counter floats directly over gameplay.
+
+### Validation
+
+- [x] Reviewed the modified scene and script references for HUD wiring, coin pickup flow, and saved-score reuse on load.
+- [ ] Run Godot parser / headless validation once a local Godot executable is available in PATH or the workspace.
+
+### Notes
+
+- Continue data already persists both `progress.score` and `collected_item_keys` in `LevelManager`; the new HUD initializes from that saved state when the gameplay scene loads.
+- No commit actions were taken.

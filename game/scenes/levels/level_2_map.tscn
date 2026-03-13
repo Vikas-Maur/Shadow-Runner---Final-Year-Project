@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://pb5ujkujbde5"]
 
-[ext_resource type="Script" uid="uid://cyc6qm47h2fab" path="res://scripts/game_manager.gd" id="1_l4ihi"]
 [ext_resource type="Texture2D" uid="uid://d0q2g65ahgok" path="res://assets/sprites/world_tileset.png" id="2_r1crl"]
 [ext_resource type="Texture2D" uid="uid://cc2ppcti7fkt8" path="res://assets/sprites/A4.png" id="4_1kice"]
 [ext_resource type="Texture2D" uid="uid://bl53gpvg5mh1y" path="res://assets/sprites/slime_green.png" id="5_5newe"]
@@ -6845,10 +6844,6 @@ normal = Vector2(-0.011493494, -0.99993396)
 distance = -168.0004
 
 [node name="Game" type="Node2D" unique_id=2131539118]
-
-[node name="GameManager" type="Node" parent="." unique_id=868416066]
-unique_name_in_owner = true
-script = ExtResource("1_l4ihi")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1847250110]
 tile_set = SubResource("TileSet_wvtw0")

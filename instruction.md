@@ -36,6 +36,7 @@
 - Prefer signals/events for communication between nodes; avoid tight coupling.
 - Keep backward compatibility when extending systems (for example wrapper methods like `take_damage()`).
 - Isolate UI logic from core gameplay logic.
+- Keep persistent screen-space HUD in dedicated `CanvasLayer` scenes or under the main game scene, not embedded inside per-level map scenes.
 - Avoid duplicating logic between player and NPC/enemy scripts; share behavior through common patterns/resources.
 - Make dangerous world elements data-driven (damage amount, cooldowns, effects).
 - Keep names consistent and clear (`max_health`, `current_health`, `is_dead`, etc.).
