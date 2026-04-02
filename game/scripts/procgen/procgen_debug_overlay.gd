@@ -21,11 +21,11 @@ func _draw() -> void:
 	for layer_name in _layout.layer_names:
 		for y in range(_layout.height):
 			for x in range(_layout.width):
-				var definition := _catalog.get_definition_by_index(_layout.get_cell(layer_name, x, y))
+				var definition: ProcGenTileDefinition = _catalog.get_definition_by_index(_layout.get_cell(layer_name, x, y))
 				if definition == null or definition.id == &"air":
 					continue
 
-				var cell_rect := Rect2(Vector2(x, y) * tile_size, tile_size)
+				var cell_rect: Rect2 = Rect2(Vector2(x, y) * tile_size, tile_size)
 				if show_collision and definition.collision_enabled:
 					draw_rect(cell_rect, Color(0.1, 0.6, 1.0, 0.18), true)
 				if show_danger and definition.danger > 0.0:

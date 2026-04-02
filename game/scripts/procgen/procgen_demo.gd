@@ -11,11 +11,11 @@ extends Node2D
 var _service: ProcGenService
 
 func _ready() -> void:
-	var catalog := ProcGenDefaults.build_catalog()
-	var theme := ProcGenDefaults.build_theme()
+	var catalog: ProcGenTileCatalog = ProcGenDefaults.build_catalog()
+	var theme: ProcGenVisualTheme = ProcGenDefaults.build_theme()
 	_service = ProcGenService.new(catalog)
 
-	var request := ProcGenRequest.from_dict({
+	var request: ProcGenRequest = ProcGenRequest.from_dict({
 		"seed": seed,
 		"width": map_width,
 		"height": map_height,
@@ -28,8 +28,8 @@ func _ready() -> void:
 		}
 	})
 
-	var layout := _service.generate_layout(request)
-	ProcGenTileMapRenderer.new().render(layout, catalog, theme, tile_map, request.seed)
+	var layout: ProcGenLayout = _service.generate_layout(request)
+	ProcGenTileMapRenderer.new().render(layout, catalog, theme, tile_map, request.seed, Vector2i.ZERO, true)
 
 	if debug_overlay != null:
 		debug_overlay.configure(layout, catalog)

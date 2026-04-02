@@ -3,29 +3,29 @@ extends RefCounted
 
 static func build_catalog() -> ProcGenTileCatalog:
 	var catalog := ProcGenTileCatalog.new()
-	catalog.definitions = [
-		_tile(&"air", "Air", false, 1.0, 1.0, 0.0, false, []),
-		_tile(&"floor", "Floor", true, 1.0, 0.8, 0.0, true, ["ground", "walkable_surface"]),
-		_tile(&"wall", "Wall", true, 1.2, 0.95, 0.0, true, ["ground", "blocker"]),
-		_tile(&"one_way", "One Way Platform", true, 1.0, 0.7, 0.0, false, ["ground", "platform"]),
-		_tile(&"spike", "Spike", true, 0.9, 1.0, 1.0, false, ["hazard"]),
-		_tile(&"shadow_zone", "Shadow Zone", false, 1.0, 0.2, 0.0, false, ["stealth", "cover"]),
-		_tile(&"light_zone", "Light Zone", false, 1.0, 1.0, 0.0, false, ["stealth", "lit"])
-	]
+	var definitions: Array[ProcGenTileDefinition] = []
+	definitions.append(_tile(&"air", "Air", false, 1.0, 1.0, 0.0, false, []))
+	definitions.append(_tile(&"floor", "Floor", true, 1.0, 0.8, 0.0, true, ["ground", "walkable_surface"]))
+	definitions.append(_tile(&"wall", "Wall", true, 1.2, 0.95, 0.0, true, ["ground", "blocker"]))
+	definitions.append(_tile(&"one_way", "One Way Platform", true, 1.0, 0.7, 0.0, false, ["ground", "platform"]))
+	definitions.append(_tile(&"spike", "Spike", true, 0.9, 1.0, 1.0, false, ["hazard"]))
+	definitions.append(_tile(&"shadow_zone", "Shadow Zone", false, 1.0, 0.2, 0.0, false, ["stealth", "cover"]))
+	definitions.append(_tile(&"light_zone", "Light Zone", false, 1.0, 1.0, 0.0, false, ["stealth", "lit"]))
+	catalog.definitions = definitions
 	catalog.rebuild_index()
 	return catalog
 
 static func build_theme() -> ProcGenVisualTheme:
 	var theme := ProcGenVisualTheme.new()
-	theme.visuals = [
-		_visual(&"ground", &"floor", 0, 0, Vector2i(0, 0)),
-		_visual(&"ground", &"floor", 0, 0, Vector2i(1, 0), 1, 0.4),
-		_visual(&"ground", &"wall", 0, 0, Vector2i(2, 0)),
-		_visual(&"ground", &"one_way", 0, 0, Vector2i(3, 0)),
-		_visual(&"ground", &"spike", 0, 0, Vector2i(4, 0)),
-		_visual(&"stealth", &"shadow_zone", 1, 0, Vector2i(5, 0)),
-		_visual(&"stealth", &"light_zone", 1, 0, Vector2i(6, 0))
-	]
+	var visuals: Array[ProcGenTileVisual] = []
+	visuals.append(_visual(&"ground", &"floor", 0, 0, Vector2i(0, 0)))
+	visuals.append(_visual(&"ground", &"floor", 0, 0, Vector2i(1, 0), 1, 0.4))
+	visuals.append(_visual(&"ground", &"wall", 0, 0, Vector2i(2, 0)))
+	visuals.append(_visual(&"ground", &"one_way", 0, 0, Vector2i(3, 0)))
+	visuals.append(_visual(&"ground", &"spike", 0, 0, Vector2i(4, 0)))
+	visuals.append(_visual(&"stealth", &"shadow_zone", 1, 0, Vector2i(5, 0)))
+	visuals.append(_visual(&"stealth", &"light_zone", 1, 0, Vector2i(6, 0)))
+	theme.visuals = visuals
 	theme.rebuild_index()
 	return theme
 
@@ -63,7 +63,11 @@ static func build_demo_chunks() -> Array[ProcGenChunk]:
 		"########"
 	])
 
-	return [start_chunk, gap_chunk, spike_chunk]
+	var chunks: Array[ProcGenChunk] = []
+	chunks.append(start_chunk)
+	chunks.append(gap_chunk)
+	chunks.append(spike_chunk)
+	return chunks
 
 static func _tile(
 	tile_id: StringName,

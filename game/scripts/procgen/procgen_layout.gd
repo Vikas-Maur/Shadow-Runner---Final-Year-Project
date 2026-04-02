@@ -37,7 +37,8 @@ func get_index(x: int, y: int) -> int:
 func get_cell(layer_name: StringName, x: int, y: int) -> int:
 	if not is_in_bounds(x, y) or not _layer_data.has(layer_name):
 		return -1
-	return (_layer_data[layer_name] as Array[int])[get_index(x, y)]
+	var data: Array[int] = _layer_data[layer_name]
+	return data[get_index(x, y)]
 
 func set_cell(layer_name: StringName, x: int, y: int, value: int) -> void:
 	if not is_in_bounds(x, y) or not _layer_data.has(layer_name):
@@ -57,7 +58,7 @@ func stamp(other: ProcGenLayout, origin: Vector2i) -> void:
 			layer_names.append(layer_name)
 		for y in range(other.height):
 			for x in range(other.width):
-				var value := other.get_cell(layer_name, x, y)
+				var value: int = other.get_cell(layer_name, x, y)
 				if value < 0:
 					continue
 				set_cell(layer_name, origin.x + x, origin.y + y, value)
@@ -66,7 +67,8 @@ func clone() -> ProcGenLayout:
 	var copy := ProcGenLayout.new(width, height, layer_names)
 	copy.metadata = metadata.duplicate(true)
 	for layer_name in layer_names:
-		copy._layer_data[layer_name] = (_layer_data[layer_name] as Array[int]).duplicate()
+		var source_data: Array[int] = _layer_data[layer_name]
+		copy._layer_data[layer_name] = source_data.duplicate()
 	return copy
 
 func get_used_rect(layer_name: StringName) -> Rect2i:
@@ -95,7 +97,7 @@ func to_rows(catalog: ProcGenTileCatalog, layer_name: StringName) -> PackedStrin
 	for y in range(height):
 		var row := ""
 		for x in range(width):
-			var definition := catalog.get_definition_by_index(get_cell(layer_name, x, y))
+			var definition: ProcGenTileDefinition = catalog.get_definition_by_index(get_cell(layer_name, x, y))
 			if definition == null or definition.id == &"air":
 				row += "."
 				continue
@@ -104,13 +106,13 @@ func to_rows(catalog: ProcGenTileCatalog, layer_name: StringName) -> PackedStrin
 	return rows
 
 func to_dictionary(catalog: ProcGenTileCatalog) -> Dictionary:
-	var serialized_layers := {}
+	var serialized_layers: Dictionary = {}
 	for layer_name in layer_names:
 		var rows: Array[PackedStringArray] = []
 		for y in range(height):
 			var row := PackedStringArray()
 			for x in range(width):
-				var definition := catalog.get_definition_by_index(get_cell(layer_name, x, y))
+				var definition: ProcGenTileDefinition = catalog.get_definition_by_index(get_cell(layer_name, x, y))
 				row.append(String(definition.id) if definition != null else "")
 			rows.append(row)
 		serialized_layers[String(layer_name)] = rows

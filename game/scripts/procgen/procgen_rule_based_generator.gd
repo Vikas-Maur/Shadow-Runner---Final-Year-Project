@@ -26,6 +26,7 @@ func generate(request: ProcGenRequest, catalog: ProcGenTileCatalog) -> ProcGenLa
 	var min_platform := int(request.params.get("min_platform", 4))
 	var max_platform := int(request.params.get("max_platform", 8))
 	var shadow_depth := int(request.params.get("shadow_depth", 2))
+	var hazard_chance := clampf(float(request.params.get("hazard_chance", 0.25)), 0.0, 1.0)
 
 	while x_cursor < request.width - 8:
 		var platform_length := rng.randi_range(min_platform, max_platform)
@@ -37,7 +38,7 @@ func generate(request: ProcGenRequest, catalog: ProcGenTileCatalog) -> ProcGenLa
 					layout.set_cell(&"stealth", x, shadow_y, shadow_tile)
 
 		var hazard_roll := rng.randf()
-		if hazard_roll < 0.25 and x_cursor + platform_length + 2 < request.width - 2:
+		if hazard_roll < hazard_chance and x_cursor + platform_length + 2 < request.width - 2:
 			layout.set_cell(&"ground", x_cursor + platform_length - 1, platform_y - 1, spike_tile)
 
 		var gap := rng.randi_range(2, max_gap)

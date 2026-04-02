@@ -20,13 +20,13 @@ extends Resource
 
 func stamp_into(layout: ProcGenLayout, origin: Vector2i, catalog: ProcGenTileCatalog) -> void:
 	for y in range(min(rows.size(), height)):
-		var row := rows[y]
+		var row: String = rows[y]
 		for x in range(min(row.length(), width)):
-			var symbol := row.substr(x, 1)
+			var symbol: String = row.substr(x, 1)
 			if not legend.has(symbol):
 				continue
-			var tile_id := StringName(legend[symbol])
-			var tile_index := catalog.get_index(tile_id)
+			var tile_id: StringName = StringName(legend[symbol])
+			var tile_index: int = catalog.get_index(tile_id)
 			if tile_index < 0:
 				continue
 			layout.set_cell(logical_layer, origin.x + x, origin.y + y, tile_index)

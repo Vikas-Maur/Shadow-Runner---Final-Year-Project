@@ -8,7 +8,7 @@ var _indices_by_id: Dictionary = {}
 func rebuild_index() -> void:
 	_indices_by_id.clear()
 	for index in range(definitions.size()):
-		var definition := definitions[index]
+		var definition: ProcGenTileDefinition = definitions[index]
 		if definition == null:
 			continue
 		_indices_by_id[definition.id] = index
@@ -32,7 +32,7 @@ func get_definition_by_index(index: int) -> ProcGenTileDefinition:
 	return definitions[index]
 
 func require_index(tile_id: StringName) -> int:
-	var tile_index := get_index(tile_id)
+	var tile_index: int = get_index(tile_id)
 	assert(tile_index >= 0, "Unknown tile id: %s" % String(tile_id))
 	return tile_index
 

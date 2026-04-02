@@ -10,19 +10,29 @@ func rebuild_index() -> void:
 	for visual in visuals:
 		if visual == null:
 			continue
-		var key := _get_key(visual.logical_layer, visual.tile_id)
+		var key: String = _get_key(visual.logical_layer, visual.tile_id)
 		if not _visuals_by_key.has(key):
-			_visuals_by_key[key] = []
-		(_visuals_by_key[key] as Array).append(visual)
+			var new_bucket: Array[ProcGenTileVisual] = []
+			_visuals_by_key[key] = new_bucket
+		var bucket: Array[ProcGenTileVisual] = _visuals_by_key[key]
+		bucket.append(visual)
 
 func get_visuals(logical_layer: StringName, tile_id: StringName) -> Array[ProcGenTileVisual]:
 	if _visuals_by_key.is_empty():
 		rebuild_index()
-	var key := _get_key(logical_layer, tile_id)
-	return _visuals_by_key.get(key, [])
+	var key: String = _get_key(logical_layer, tile_id)
+	if not _visuals_by_key.has(key):
+		var empty: Array[ProcGenTileVisual] = []
+		return empty
+
+	var result: Array[ProcGenTileVisual] = []
+	for item in _visuals_by_key[key]:
+		if item is ProcGenTileVisual:
+			result.append(item)
+	return result
 
 func pick_visual(logical_layer: StringName, tile_id: StringName, cell: Vector2i, seed: int) -> ProcGenTileVisual:
-	var candidates := get_visuals(logical_layer, tile_id)
+	var candidates: Array[ProcGenTileVisual] = get_visuals(logical_layer, tile_id)
 	if candidates.is_empty():
 		return null
 	if candidates.size() == 1:
@@ -39,7 +49,7 @@ func pick_visual(logical_layer: StringName, tile_id: StringName, cell: Vector2i,
 		if roll <= cursor:
 			return candidate
 
-	return candidates.back()
+	return candidates[candidates.size() - 1]
 
 func _get_key(logical_layer: StringName, tile_id: StringName) -> String:
 	return "%s::%s" % [String(logical_layer), String(tile_id)]

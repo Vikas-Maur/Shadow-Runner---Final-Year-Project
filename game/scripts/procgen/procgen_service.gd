@@ -17,7 +17,7 @@ func generate_layout(request: ProcGenRequest) -> ProcGenLayout:
 	assert(catalog != null, "ProcGenService requires a tile catalog.")
 	var generator: ProcGenLevelGenerator = _generators.get(request.algorithm)
 	assert(generator != null, "Unknown generator algorithm: %s" % String(request.algorithm))
-	var layout := generator.generate(request, catalog)
+	var layout: ProcGenLayout = generator.generate(request, catalog)
 	apply_agent_overrides(layout, request.agent_overrides)
 	return layout
 
@@ -26,16 +26,16 @@ func generate_layout_from_dict(request_data: Dictionary) -> ProcGenLayout:
 
 func compose_chunk_sequence(request: ProcGenRequest, chunks: Array[ProcGenChunk]) -> ProcGenLayout:
 	assert(catalog != null, "ProcGenService requires a tile catalog.")
-	var layout := ProcGenLayout.new(request.width, request.height, request.logical_layers)
-	var air := catalog.require_index(&"air")
+	var layout: ProcGenLayout = ProcGenLayout.new(request.width, request.height, request.logical_layers)
+	var air: int = catalog.require_index(&"air")
 	for layer_name in request.logical_layers:
 		layout.fill(layer_name, air)
 
-	var cursor_x := 0
+	var cursor_x: int = 0
 	for chunk in chunks:
 		if chunk == null:
 			continue
-		var origin := Vector2i(cursor_x, max(0, request.height - chunk.height))
+		var origin: Vector2i = Vector2i(cursor_x, max(0, request.height - chunk.height))
 		chunk.stamp_into(layout, origin, catalog)
 		cursor_x += chunk.width
 		if cursor_x >= request.width:
@@ -51,9 +51,9 @@ func apply_agent_overrides(layout: ProcGenLayout, overrides: Array[Dictionary]) 
 	if catalog == null:
 		return
 	for override in overrides:
-		var layer_name := StringName(override.get("layer", "ground"))
-		var tile_id := StringName(override.get("tile_id", "air"))
-		var tile_index := catalog.get_index(tile_id)
+		var layer_name: StringName = StringName(override.get("layer", "ground"))
+		var tile_id: StringName = StringName(override.get("tile_id", "air"))
+		var tile_index: int = catalog.get_index(tile_id)
 		if tile_index < 0:
 			continue
 		layout.set_cell(layer_name, int(override.get("x", -1)), int(override.get("y", -1)), tile_index)

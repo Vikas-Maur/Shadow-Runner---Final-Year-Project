@@ -6,15 +6,18 @@ func render(
 	catalog: ProcGenTileCatalog,
 	theme: ProcGenVisualTheme,
 	tile_map: TileMap,
-	seed: int = 0
+	seed: int = 0,
+	cell_origin: Vector2i = Vector2i.ZERO,
+	clear_layers: bool = true
 ) -> void:
 	if tile_map == null:
 		return
 
 	var used_layers := _collect_tile_map_layers(theme)
-	for tile_map_layer in used_layers:
-		if tile_map_layer >= 0 and tile_map_layer < tile_map.get_layers_count():
-			tile_map.clear_layer(tile_map_layer)
+	if clear_layers:
+		for tile_map_layer in used_layers:
+			if tile_map_layer >= 0 and tile_map_layer < tile_map.get_layers_count():
+				tile_map.clear_layer(tile_map_layer)
 
 	for logical_layer in layout.layer_names:
 		for y in range(layout.height):
@@ -38,9 +41,10 @@ func render(
 				if visual.tile_map_layer >= tile_map.get_layers_count():
 					continue
 
+				var target_cell := cell_origin + Vector2i(x, y)
 				tile_map.set_cell(
 					visual.tile_map_layer,
-					Vector2i(x, y),
+					target_cell,
 					visual.source_id,
 					visual.atlas_coords,
 					visual.alternative_tile

@@ -29,6 +29,7 @@
 [ext_resource type="Texture2D" uid="uid://0jsbvlwrawmh" path="res://assets/sprites/background_/dungeon_.png" id="22_8qswn"]
 [ext_resource type="Texture2D" uid="uid://31dg7walde4q" path="res://assets/sprites/background_/desertDungeon_.png" id="23_rm0al"]
 [ext_resource type="PackedScene" uid="uid://dj6lw4q5tm5ph" path="res://scenes/enemies/final_boss.tscn" id="31_i3odi"]
+[ext_resource type="Script" path="res://scripts/level_3_proc_extension.gd" id="32_proc_ext"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ashvg"]
 texture = ExtResource("2_r1crl")
@@ -7044,6 +7045,7 @@ sources/28 = SubResource("TileSetAtlasSource_l6q63")
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_cn5tm"]
 
 [node name="Game" type="Node2D" unique_id=2131539118]
+script = ExtResource("32_proc_ext")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1847250110]
 tile_set = SubResource("TileSet_wvtw0")
