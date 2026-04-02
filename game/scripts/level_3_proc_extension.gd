@@ -1,0 +1,176 @@
+extends Node2D
+
+const PORTAL_SCENE := preload("res://scenes/portal.tscn")
+const PROC_SEED := 300319
+const MID_LAYER := 1
+const BRIDGE_TILES := 4
+const EXTENSION_MARGIN_TILES := 3
+const PROC_TILE_SOURCE_ID := 0
+const PROC_FLOOR_ATLAS := Vector2i(0, 0)
+const PROC_WALL_ATLAS := Vector2i(2, 0)
+const PROC_ONE_WAY_ATLAS := Vector2i(3, 0)
+
+@onready var tile_map: TileMap = $TileMap
+@onready var final_boss: Node2D = $FinalBoss
+
+var _catalog: ProcGenTileCatalog
+var _service: ProcGenService
+
+func _ready() -> void:
+	if tile_map == null:
+		return
+
+	_catalog = ProcGenDefaults.build_catalog()
+	_service = ProcGenService.new(_catalog)
+
+	var floor_anchor: Vector2i = _find_extension_anchor_cell()
+	if floor_anchor == Vector2i(-1, -1):
+		push_warning("Level 3 procedural extension could not find a floor anchor.")
+		return
+
+	var request: ProcGenRequest = ProcGenRequest.from_dict({
+		"seed": PROC_SEED,
+		"width": 52,
+		"height": 22,
+		"algorithm": "rule_based",
+		"logical_layers": ["ground", "stealth"],
+		"params": {
+			"floor_thickness": 3,
+			"max_gap": 4,
+			"max_rise": 2,
+			"min_platform": 4,
+			"max_platform": 7,
+			"shadow_depth": 0,
+			"hazard_chance": 0.0
+		},
+		"agent_overrides": [
+			{"layer": "ground", "x": 0, "y": 17, "tile_id": "floor"},
+			{"layer": "ground", "x": 1, "y": 17, "tile_id": "floor"},
+			{"layer": "ground", "x": 2, "y": 17, "tile_id": "floor"}
+		]
+	})
+
+	var layout: ProcGenLayout = _service.generate_layout(request)
+	var entry_floor_y: int = _find_entry_floor_y(layout)
+	var extension_origin: Vector2i = Vector2i(
+		floor_anchor.x + BRIDGE_TILES + EXTENSION_MARGIN_TILES,
+		floor_anchor.y - entry_floor_y
+	)
+	var theme: ProcGenVisualTheme = _build_fixed_proc_theme()
+	if not _theme_has_ground_collision(theme):
+		push_warning("Level 3 procedural extension tiles are missing collision shapes in the TileSet.")
+		return
+
+	_draw_bridge(floor_anchor, extension_origin.x, theme)
+	ProcGenTileMapRenderer.new().render(layout, _catalog, theme, tile_map, PROC_SEED, extension_origin, false)
+	_spawn_portal(layout, extension_origin)
+
+func _find_extension_anchor_cell() -> Vector2i:
+	var used_rect: Rect2i = tile_map.get_used_rect()
+	var boss_cell: Vector2i = tile_map.local_to_map(final_boss.position) if final_boss != null else used_rect.get_center()
+	var search_min_x: int = max(used_rect.position.x, boss_cell.x - 6)
+	var search_max_x: int = used_rect.end.x - 1
+	var search_min_y: int = max(used_rect.position.y, boss_cell.y - 2)
+	var search_max_y: int = used_rect.end.y - 1
+
+	for x in range(search_max_x, search_min_x - 1, -1):
+		for y in range(search_min_y, search_max_y + 1):
+			var cell: Vector2i = Vector2i(x, y)
+			if not _is_mid_layer_occupied(cell):
+				continue
+			if _is_mid_layer_occupied(cell + Vector2i(0, -1)):
+				continue
+			return cell
+
+	for x in range(search_max_x, used_rect.position.x - 1, -1):
+		for y in range(used_rect.position.y, used_rect.end.y):
+			var fallback_cell: Vector2i = Vector2i(x, y)
+			if _is_mid_layer_occupied(fallback_cell):
+				return fallback_cell
+
+	return Vector2i(-1, -1)
+
+func _build_fixed_proc_theme() -> ProcGenVisualTheme:
+	var theme: ProcGenVisualTheme = ProcGenVisualTheme.new()
+	var visuals: Array[ProcGenTileVisual] = []
+	visuals.append(_make_visual(&"ground", &"floor", PROC_FLOOR_ATLAS))
+	visuals.append(_make_visual(&"ground", &"one_way", PROC_ONE_WAY_ATLAS))
+	visuals.append(_make_visual(&"ground", &"wall", PROC_WALL_ATLAS))
+	visuals.append(_make_visual(&"ground", &"spike", Vector2i(4, 0)))
+	theme.visuals = visuals
+	theme.rebuild_index()
+	return theme
+
+func _draw_bridge(floor_anchor: Vector2i, extension_start_x: int, theme: ProcGenVisualTheme) -> void:
+	var bridge_visual: ProcGenTileVisual = theme.pick_visual(&"ground", &"floor", floor_anchor, PROC_SEED)
+	if bridge_visual == null:
+		return
+
+	for x in range(floor_anchor.x + 1, extension_start_x):
+		tile_map.set_cell(
+			bridge_visual.tile_map_layer,
+			Vector2i(x, floor_anchor.y),
+			bridge_visual.source_id,
+			bridge_visual.atlas_coords,
+			bridge_visual.alternative_tile
+		)
+
+func _spawn_portal(layout: ProcGenLayout, extension_origin: Vector2i) -> void:
+	var goal_variant: Variant = layout.metadata.get("goal", Vector2i(layout.width - 3, 10))
+	var goal_cell: Vector2i = Vector2i(layout.width - 3, 10)
+	if goal_variant is Vector2i:
+		goal_cell = goal_variant
+	var portal: Node2D = PORTAL_SCENE.instantiate() as Node2D
+	add_child(portal)
+	portal.position = tile_map.map_to_local(extension_origin + goal_cell) + Vector2(0.0, -8.0)
+
+func _find_entry_floor_y(layout: ProcGenLayout) -> int:
+	for x in range(min(6, layout.width)):
+		for y in range(layout.height):
+			var tile_index: int = layout.get_cell(&"ground", x, y)
+			var definition: ProcGenTileDefinition = _catalog.get_definition_by_index(tile_index)
+			if definition == null:
+				continue
+			if definition.id == &"floor" or definition.id == &"wall" or definition.id == &"one_way":
+				return y
+	return layout.height - 1
+
+func _make_visual(logical_layer: StringName, tile_id: StringName, atlas_coords: Vector2i) -> ProcGenTileVisual:
+	var visual: ProcGenTileVisual = ProcGenTileVisual.new()
+	visual.logical_layer = logical_layer
+	visual.tile_id = tile_id
+	visual.tile_map_layer = MID_LAYER
+	visual.source_id = PROC_TILE_SOURCE_ID
+	visual.atlas_coords = atlas_coords
+	visual.alternative_tile = 0
+	visual.weight = 1.0
+	return visual
+
+func _theme_has_ground_collision(theme: ProcGenVisualTheme) -> bool:
+	var required_tiles: Array[StringName] = [&"floor", &"wall", &"one_way"]
+	for tile_id in required_tiles:
+		var visual: ProcGenTileVisual = theme.pick_visual(&"ground", tile_id, Vector2i.ZERO, PROC_SEED)
+		if visual == null:
+			return false
+		if not _visual_has_collision(visual):
+			return false
+	return true
+
+func _visual_has_collision(visual: ProcGenTileVisual) -> bool:
+	if tile_map == null or tile_map.tile_set == null:
+		return false
+	var source: TileSetSource = tile_map.tile_set.get_source(visual.source_id)
+	var atlas_source: TileSetAtlasSource = source as TileSetAtlasSource
+	if atlas_source == null:
+		return false
+	if not atlas_source.has_tile(visual.atlas_coords):
+		return false
+	var tile_data: TileData = atlas_source.get_tile_data(visual.atlas_coords, visual.alternative_tile)
+	if tile_data == null:
+		return false
+	return tile_data.get_collision_polygons_count(0) > 0
+
+func _is_mid_layer_occupied(cell: Vector2i) -> bool:
+	if cell.y < 0:
+		return false
+	return tile_map.get_cell_source_id(MID_LAYER, cell) != -1
