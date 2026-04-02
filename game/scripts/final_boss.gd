@@ -79,7 +79,7 @@ const PHASE_RECOVER := &"recover"
 
 @export_group("LLM AI")
 @export var enable_llm_ai: bool = true
-@export var ollama_model: String = "gemma2:9b"
+@export var ollama_model: String = "gemma3:12b"
 @export var ai_decision_interval_seconds: float = 0.35
 @export var ai_request_timeout_ms: int = 900
 @export var ai_max_response_tokens: int = 160

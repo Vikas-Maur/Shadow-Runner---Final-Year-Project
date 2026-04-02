@@ -3,7 +3,7 @@ extends Node
 const OLLAMA_HOST := "127.0.0.1"
 const OLLAMA_PORT := 11434
 const CHAT_ENDPOINT := "/api/chat"
-const DEFAULT_MODEL := "gemma2:9b"
+const DEFAULT_MODEL := "gemma3:12b"
 const DEFAULT_TIMEOUT_MS := 30000
 const DEFAULT_STREAM_TOKENS := 500
 const DEFAULT_STRUCTURED_TOKENS := 160
