@@ -9,6 +9,7 @@ func _init(p_catalog: ProcGenTileCatalog = null) -> void:
 	register_generator(&"random", ProcGenRandomGenerator.new())
 	register_generator(&"rule_based", ProcGenRuleBasedGenerator.new())
 	register_generator(&"noise", ProcGenNoiseGenerator.new())
+	register_generator(&"composed_path", ProcGenComposedPathGenerator.new())
 
 func register_generator(generator_id: StringName, generator: ProcGenLevelGenerator) -> void:
 	_generators[generator_id] = generator
@@ -75,7 +76,7 @@ func get_request_schema() -> Dictionary:
 			"height": {"type": "integer"},
 			"algorithm": {
 				"type": "string",
-				"enum": ["random", "rule_based", "noise"]
+				"enum": ["random", "rule_based", "noise", "composed_path"]
 			},
 			"logical_layers": {
 				"type": "array",

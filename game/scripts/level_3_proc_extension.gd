@@ -54,18 +54,21 @@ func _build_randomized_request() -> ProcGenRequest:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = _runtime_seed
 
-	var width: int = rng.randi_range(48, 68)
-	var height: int = rng.randi_range(21, 24)
+	var style_profile: StringName = _choose_style_profile(rng)
+	var motif_plan: Array[String] = _build_motif_plan(rng, style_profile)
+	var width: int = rng.randi_range(56, 84)
+	var height: int = rng.randi_range(21, 27)
 	var floor_thickness: int = 3
 	var corridor_bottom: int = height - floor_thickness - 2
-	var min_platform: int = rng.randi_range(4, 6)
-	var max_platform: int = min_platform + rng.randi_range(2, 4)
-	var max_gap: int = rng.randi_range(3, 4)
-	var max_rise: int = rng.randi_range(1, 2)
-	var shadow_depth: int = rng.randi_range(0, 1)
+	var max_gap: int = rng.randi_range(2, 4)
+	var max_step: int = 1
+	var shadow_depth: int = rng.randi_range(1, 3)
+	var branch_density: float = rng.randf_range(0.35, 0.72)
+	var overhang_density: float = rng.randf_range(0.25, 0.65)
+	var arch_density: float = rng.randf_range(0.15, 0.5)
 	var overrides: Array[Dictionary] = []
 
-	for x in range(3):
+	for x in range(4):
 		overrides.append({
 			"layer": "ground",
 			"x": x,
@@ -77,19 +80,47 @@ func _build_randomized_request() -> ProcGenRequest:
 		"seed": _runtime_seed,
 		"width": width,
 		"height": height,
-		"algorithm": "rule_based",
+		"algorithm": "composed_path",
 		"logical_layers": ["ground", "stealth"],
 		"params": {
 			"floor_thickness": floor_thickness,
 			"max_gap": max_gap,
-			"max_rise": max_rise,
-			"min_platform": min_platform,
-			"max_platform": max_platform,
+			"max_step": max_step,
 			"shadow_depth": shadow_depth,
-			"hazard_chance": 0.0
+			"hazard_chance": 0.0,
+			"branch_density": branch_density,
+			"overhang_density": overhang_density,
+			"arch_density": arch_density,
+			"style_profile": String(style_profile),
+			"motif_plan": motif_plan,
+			"entry_y": corridor_bottom
 		},
 		"agent_overrides": overrides
 	})
+
+func _choose_style_profile(rng: RandomNumberGenerator) -> StringName:
+	var styles: Array[StringName] = [&"terraces", &"catwalks", &"zigzag", &"caverns"]
+	return styles[rng.randi_range(0, styles.size() - 1)]
+
+func _build_motif_plan(rng: RandomNumberGenerator, style_profile: StringName) -> Array[String]:
+	var motif_count: int = rng.randi_range(6, 10)
+	var motifs: Array[String] = []
+	var bag: Array[StringName] = [&"flat", &"rise", &"drop", &"wave", &"basin", &"mesa", &"stair"]
+
+	match style_profile:
+		&"terraces":
+			bag.append_array([&"mesa", &"mesa", &"flat", &"rise"])
+		&"catwalks":
+			bag.append_array([&"flat", &"flat", &"stair", &"drop"])
+		&"zigzag":
+			bag.append_array([&"wave", &"wave", &"stair", &"rise", &"drop"])
+		&"caverns":
+			bag.append_array([&"basin", &"basin", &"mesa", &"wave"])
+
+	for _index in range(motif_count):
+		motifs.append(String(bag[rng.randi_range(0, bag.size() - 1)]))
+
+	return motifs
 
 func _find_extension_anchor_cell() -> Vector2i:
 	var used_rect: Rect2i = tile_map.get_used_rect()

@@ -227,10 +227,14 @@ func _connect_client(client: HTTPClient, timeout_ms: int) -> Dictionary:
 			return {
 				"ok": false,
 				"error": "connect_timeout"
-			}
+		}
 
 		client.poll()
-		await get_tree().process_frame
+		if not await _await_next_frame():
+			return {
+				"ok": false,
+				"error": "request_cancelled"
+			}
 
 	if client.get_status() != HTTPClient.STATUS_CONNECTED:
 		return {
@@ -261,7 +265,11 @@ func _read_streaming_response(client: HTTPClient, stream_callback: Callable, tim
 		client.poll()
 		var chunk := client.read_response_body_chunk()
 		if chunk.size() == 0:
-			await get_tree().process_frame
+			if not await _await_next_frame():
+				return {
+					"ok": false,
+					"error": "request_cancelled"
+				}
 			continue
 
 		buffer += chunk.get_string_from_utf8()
@@ -315,10 +323,14 @@ func _await_response_start(client: HTTPClient, timeout_ms: int) -> Dictionary:
 			return {
 				"ok": false,
 				"error": "request_timeout"
-			}
+		}
 
 		client.poll()
-		await get_tree().process_frame
+		if not await _await_next_frame():
+			return {
+				"ok": false,
+				"error": "request_cancelled"
+			}
 
 	var status := client.get_status()
 	if status != HTTPClient.STATUS_BODY and status != HTTPClient.STATUS_CONNECTED:
@@ -353,7 +365,12 @@ func _drain_response_body(client: HTTPClient, timeout_ms: int) -> Dictionary:
 		client.poll()
 		var chunk := client.read_response_body_chunk()
 		if chunk.size() == 0:
-			await get_tree().process_frame
+			if not await _await_next_frame():
+				return {
+					"ok": false,
+					"error": "request_cancelled",
+					"body": body
+				}
 			continue
 
 		body += chunk.get_string_from_utf8()
@@ -362,6 +379,17 @@ func _drain_response_body(client: HTTPClient, timeout_ms: int) -> Dictionary:
 		"ok": true,
 		"body": body
 	}
+
+func _await_next_frame() -> bool:
+	if not is_inside_tree():
+		return false
+
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return false
+
+	await tree.process_frame
+	return is_inside_tree() and get_tree() != null
 
 func _extract_json_payload(content: String) -> Dictionary:
 	var stripped := content.strip_edges()
