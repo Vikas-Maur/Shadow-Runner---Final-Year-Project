@@ -14,6 +14,10 @@ const CONSTRUCT_PATTERN_RAMPART := &"rampart"
 const STOMP_NONE := 0
 const STOMP_RISING := 1
 const STOMP_DIVING := 2
+const PHASE_OBSERVE := &"observe"
+const PHASE_THINK := &"think"
+const PHASE_ACT := &"act"
+const PHASE_RECOVER := &"recover"
 
 @export_group("Movement")
 @export var move_speed: float = 96.0
@@ -59,6 +63,19 @@ const STOMP_DIVING := 2
 @export var construct_step_delay_seconds: float = 0.1
 @export var construct_block_pop_duration_seconds: float = 0.12
 @export var construct_spawn_forward_offset: float = 34.0
+
+@export_group("Combat Rhythm")
+@export var observation_base_seconds: float = 0.16
+@export var observation_jitter_seconds: float = 0.07
+@export var thinking_base_seconds: float = 0.12
+@export var thinking_jitter_seconds: float = 0.06
+@export var action_base_seconds: float = 0.32
+@export var action_jitter_seconds: float = 0.12
+@export var recovery_base_seconds: float = 0.24
+@export var recovery_jitter_seconds: float = 0.12
+@export_range(0.0, 1.0, 0.01) var hesitation_chance: float = 0.22
+@export_range(0.0, 0.5, 0.01) var imperfect_decision_noise: float = 0.12
+@export_group("")
 
 @export_group("LLM AI")
 @export var enable_llm_ai: bool = true
@@ -119,6 +136,14 @@ var _last_player_hit_on_boss: Dictionary = {
 	"type": "none"
 }
 var _recent_fireball_timestamps: Array[float] = []
+var _tile_catalog: ProcGenTileCatalog
+var _procgen_api: ProcGenAgentAPI
+var _tactical_brain: FinalBossTacticalBrain
+var _llm_suggested_decision: Dictionary = {}
+var _last_observation_snapshot: Dictionary = {}
+var _queued_phase_decision: Dictionary = {}
+var _combat_phase: StringName = PHASE_OBSERVE
+var _phase_timer: float = 0.0
 
 func _ready() -> void:
 	if LevelManager.is_enemy_defeated(self):
@@ -127,12 +152,17 @@ func _ready() -> void:
 
 	_capture_instance_scale()
 	_refresh_player_reference()
+	_tile_catalog = ProcGenDefaults.build_catalog()
+	_procgen_api = ProcGenAgentAPI.new()
+	_tactical_brain = FinalBossTacticalBrain.new(int(get_instance_id()))
+	_refresh_procgen_context()
 	_ollama_api = _find_ollama_api()
 	if npc != null and npc.has_signal("died") and not npc.died.is_connected(_on_npc_died):
 		npc.died.connect(_on_npc_died)
 
 	animated_sprite.play("default")
 	_apply_visual_facing()
+	_enter_combat_phase(PHASE_OBSERVE, _pick_phase_duration(observation_base_seconds, observation_jitter_seconds))
 	_capture_runtime_state()
 
 func _physics_process(delta: float) -> void:
@@ -141,6 +171,7 @@ func _physics_process(delta: float) -> void:
 
 	var was_on_floor := is_on_floor()
 	_refresh_player_reference()
+	_refresh_procgen_context()
 	if _ollama_api == null or not is_instance_valid(_ollama_api):
 		_ollama_api = _find_ollama_api()
 
@@ -171,30 +202,156 @@ func _update_ai(delta: float) -> void:
 	_run_future_ai_hooks(delta)
 	_update_llm_controller(delta)
 
-func _update_phase_state(_delta: float) -> void:
-	pass
+func _update_phase_state(delta: float) -> void:
+	if not _can_run_combat_ai():
+		_reset_combat_phase_loop()
+		return
+
+	_phase_timer = max(_phase_timer - delta, 0.0)
+	_ai_state["combat_phase"] = String(_combat_phase)
+	_ai_state["phase_time_remaining"] = _round_number(_phase_timer)
+
+	match _combat_phase:
+		PHASE_OBSERVE:
+			_move_intent = 0.0
+			if _phase_timer <= 0.0:
+				_last_observation_snapshot = _build_ai_prompt_snapshot()
+				_enter_combat_phase(PHASE_THINK, _pick_phase_duration(thinking_base_seconds, thinking_jitter_seconds))
+		PHASE_THINK:
+			_move_intent = 0.0
+			if _phase_timer <= 0.0:
+				var decision: Dictionary = _choose_phase_decision()
+				_queue_phase_decision(decision)
+				_enter_combat_phase(PHASE_ACT, float(decision.get("action_seconds", _pick_phase_duration(action_base_seconds, action_jitter_seconds))))
+		PHASE_ACT:
+			if _phase_timer <= 0.0:
+				_move_intent = 0.0
+				_current_move_horizon = 0.0
+				_enter_combat_phase(PHASE_RECOVER, float(_queued_phase_decision.get("recovery_seconds", _pick_phase_duration(recovery_base_seconds, recovery_jitter_seconds))))
+		PHASE_RECOVER:
+			_move_intent = 0.0
+			if _phase_timer <= 0.0:
+				_llm_suggested_decision = {}
+				_last_observation_snapshot = {}
+				_enter_combat_phase(PHASE_OBSERVE, _pick_phase_duration(observation_base_seconds, observation_jitter_seconds))
+		_:
+			_enter_combat_phase(PHASE_OBSERVE, _pick_phase_duration(observation_base_seconds, observation_jitter_seconds))
 
 func _run_future_ai_hooks(_delta: float) -> void:
 	if ai_hooks == null:
 		return
 
+func _enter_combat_phase(phase_name: StringName, duration_seconds: float) -> void:
+	_combat_phase = phase_name
+	_phase_timer = maxf(duration_seconds, 0.0)
+	_ai_state["combat_phase"] = String(_combat_phase)
+	_ai_state["phase_time_remaining"] = _round_number(_phase_timer)
+
+func _pick_phase_duration(base_seconds: float, jitter_seconds: float) -> float:
+	if _tactical_brain == null:
+		return _round_number(maxf(base_seconds, 0.08))
+	return _round_number(maxf(0.08, base_seconds + _tactical_brain.rng.randf_range(-jitter_seconds, jitter_seconds)))
+
+func _reset_combat_phase_loop() -> void:
+	_clear_llm_intent()
+	_llm_suggested_decision = {}
+	_last_observation_snapshot = {}
+	_queued_phase_decision = {}
+	_enter_combat_phase(PHASE_OBSERVE, 0.0)
+
+func _queue_phase_decision(decision: Dictionary) -> void:
+	_queued_phase_decision = decision.duplicate(true)
+	_last_ai_decision = decision.duplicate(true)
+	_current_move_horizon = float(decision.get("horizon_seconds", ai_max_decision_horizon_seconds))
+	_move_intent = _move_text_to_intent(String(decision.get("move", "hold")))
+	_apply_face_choice(String(decision.get("face", _get_face_to_player_text())))
+	_pending_jump_request = bool(decision.get("jump_now", false))
+	_pending_fire_request = bool(decision.get("fire_now", false))
+	_pending_stomp_request = bool(decision.get("stomp_now", false))
+
+	var construct_section: Dictionary = _get_dictionary(decision.get("construct", {}))
+	_pending_construct_request = bool(construct_section.get("spawn", false))
+	_pending_construct_cells = _normalize_construct_cells(construct_section.get("cells", []))
+	if _pending_construct_request and _pending_construct_cells.is_empty():
+		_pending_construct_request = false
+
+	_last_action_result = {
+		"time_seconds": _round_number(_get_now_seconds()),
+		"status": "decision_queued",
+		"phase": String(_combat_phase),
+		"decision": decision
+	}
+
+func _choose_phase_decision() -> Dictionary:
+	var snapshot: Dictionary = _last_observation_snapshot.duplicate(true)
+	if snapshot.is_empty():
+		snapshot = _build_ai_prompt_snapshot()
+
+	if _tactical_brain == null:
+		return _coerce_phase_decision({
+			"primary_action": "wait",
+			"move": "hold",
+			"face": _get_face_to_player_text(),
+			"jump_now": false,
+			"fire_now": false,
+			"stomp_now": false,
+			"construct": {
+				"spawn": false,
+				"cells": []
+			},
+			"horizon_seconds": _pick_phase_duration(action_base_seconds, action_jitter_seconds),
+			"observation_seconds": _pick_phase_duration(observation_base_seconds, observation_jitter_seconds),
+			"thinking_seconds": _pick_phase_duration(thinking_base_seconds, thinking_jitter_seconds),
+			"action_seconds": _pick_phase_duration(action_base_seconds, action_jitter_seconds),
+			"recovery_seconds": _pick_phase_duration(recovery_base_seconds, recovery_jitter_seconds),
+			"reason_trace": ["observe: fallback", "think: no tactical brain", "act: wait"]
+		})
+
+	var tactical_decision: Dictionary = _tactical_brain.decide(snapshot, _llm_suggested_decision)
+	return _coerce_phase_decision(tactical_decision)
+
+func _coerce_phase_decision(raw_decision: Dictionary) -> Dictionary:
+	var decision: Dictionary = raw_decision.duplicate(true)
+	decision["move"] = _coerce_move_within_bounds(String(decision.get("move", "hold")))
+	decision["face"] = _get_face_to_player_text() if ai_force_face_player else String(decision.get("face", "keep"))
+	decision["jump_now"] = bool(decision.get("jump_now", false)) and _can_jump_now()
+	decision["fire_now"] = bool(decision.get("fire_now", false)) and _can_fire_now()
+	decision["stomp_now"] = bool(decision.get("stomp_now", false)) and _can_stomp_now()
+
+	var construct_section: Dictionary = _get_dictionary(decision.get("construct", {}))
+	var can_construct: bool = bool(construct_section.get("spawn", false)) and _can_construct_now()
+	var normalized_construct_cells: Array[Vector2i] = _normalize_construct_cells(construct_section.get("cells", []))
+	decision["construct"] = {
+		"spawn": can_construct,
+		"cells": normalized_construct_cells
+	}
+	if can_construct and normalized_construct_cells.is_empty():
+		decision["construct"] = _build_construct_fallback_payload()
+
+	decision = _coerce_active_combat_decision(decision)
+
+	decision["primary_action"] = String(decision.get("primary_action", "wait"))
+	decision["horizon_seconds"] = _round_number(maxf(float(decision.get("horizon_seconds", action_base_seconds)), 0.1))
+	decision["observation_seconds"] = _round_number(maxf(float(decision.get("observation_seconds", observation_base_seconds)), 0.08))
+	decision["thinking_seconds"] = _round_number(maxf(float(decision.get("thinking_seconds", thinking_base_seconds)), 0.08))
+	decision["action_seconds"] = _round_number(maxf(float(decision.get("action_seconds", action_base_seconds)), 0.12))
+	decision["recovery_seconds"] = _round_number(maxf(float(decision.get("recovery_seconds", recovery_base_seconds)), 0.12))
+	decision["reason_trace"] = _get_string_array(decision.get("reason_trace", []))
+	return decision
+
 func _update_llm_controller(_delta: float) -> void:
 	_update_combat_facing()
 
-	if _current_move_horizon <= 0.0:
-		_move_intent = 0.0
-
 	if not enable_llm_ai:
-		_clear_llm_intent()
 		return
 
 	if not _can_run_combat_ai():
-		_clear_llm_intent()
+		return
+
+	if _combat_phase != PHASE_OBSERVE and _combat_phase != PHASE_THINK:
 		return
 
 	if _ai_request_in_flight:
-		if _ai_request_elapsed_seconds >= ai_emergency_action_delay_seconds:
-			_apply_fallback_pressure("awaiting_llm")
 		return
 
 	if _ai_request_cooldown_timer > 0.0:
@@ -207,12 +364,13 @@ func _request_llm_decision() -> void:
 		_ai_request_cooldown_timer = ai_decision_interval_seconds
 		_last_action_result = {
 			"time_seconds": _round_number(_get_now_seconds()),
-			"status": "llm_unavailable"
+			"status": "llm_unavailable_advisory"
 		}
-		_apply_fallback_pressure("llm_unavailable")
 		return
 
-	var snapshot := _build_ai_prompt_snapshot()
+	var snapshot: Dictionary = _last_observation_snapshot.duplicate(true)
+	if snapshot.is_empty():
+		snapshot = _build_ai_prompt_snapshot()
 	_ai_request_serial += 1
 	_ai_request_in_flight = true
 	_ai_request_elapsed_seconds = 0.0
@@ -252,39 +410,26 @@ func _on_llm_decision_response(result: Dictionary, request_serial: int) -> void:
 	if not bool(result.get("ok", false)):
 		_last_action_result = {
 			"time_seconds": _round_number(_get_now_seconds()),
-			"status": "llm_error",
+			"status": "llm_error_advisory",
 			"error": String(result.get("error", "unknown_error"))
 		}
-		_apply_fallback_pressure("llm_error")
+		_llm_suggested_decision = {}
 		return
 
-	var decision := _sanitize_ai_decision(result.get("json", {}))
+	var decision: Dictionary = _sanitize_ai_decision(result.get("json", {}))
 	if decision.is_empty():
 		_last_action_result = {
 			"time_seconds": _round_number(_get_now_seconds()),
-			"status": "invalid_decision"
+			"status": "invalid_llm_advice"
 		}
-		_apply_fallback_pressure("invalid_decision")
+		_llm_suggested_decision = {}
 		return
 
-	_last_ai_decision = decision
-	_current_move_horizon = float(decision.get("horizon_seconds", ai_max_decision_horizon_seconds))
-	_move_intent = _move_text_to_intent(String(decision.get("move", "hold")))
-	_apply_face_choice(String(decision.get("face", _get_face_to_player_text())))
-	_pending_jump_request = bool(decision.get("jump_now", false))
-	_pending_fire_request = bool(decision.get("fire_now", false))
-	_pending_stomp_request = bool(decision.get("stomp_now", false))
-
-	var construct_section: Dictionary = decision.get("construct", {})
-	_pending_construct_request = bool(construct_section.get("spawn", false))
-	_pending_construct_cells = _normalize_construct_cells(construct_section.get("cells", []))
-	if _pending_construct_request and _pending_construct_cells.is_empty():
-		_pending_construct_request = false
-
-	_ai_state["last_decision"] = decision
+	_llm_suggested_decision = decision
+	_ai_state["last_llm_advice"] = decision
 
 	if ai_debug_logging:
-		print("FinalBoss AI decision: ", JSON.stringify(decision))
+		print("FinalBoss AI advice: ", JSON.stringify(decision))
 
 func _sanitize_ai_decision(raw_decision: Variant) -> Dictionary:
 	if not (raw_decision is Dictionary):
@@ -309,20 +454,30 @@ func _sanitize_ai_decision(raw_decision: Variant) -> Dictionary:
 	if decision.get("construct", {}) is Dictionary:
 		construct_section = decision.get("construct", {})
 
+	var primary_action: String = String(decision.get("primary_action", "wait")).to_lower()
+	if not ["fire", "stomp", "construct", "jump", "reposition", "retreat", "wait"].has(primary_action):
+		primary_action = "wait"
+
 	var sanitized_decision := {
+		"primary_action": primary_action,
 		"move": move_text,
 		"face": face_text,
 		"jump_now": bool(decision.get("jump_now", false)),
 		"fire_now": bool(decision.get("fire_now", false)),
 		"stomp_now": bool(decision.get("stomp_now", false)),
 		"horizon_seconds": _round_number(horizon_seconds),
+		"observation_seconds": _round_number(maxf(float(decision.get("observation_seconds", observation_base_seconds)), 0.08)),
+		"thinking_seconds": _round_number(maxf(float(decision.get("thinking_seconds", thinking_base_seconds)), 0.08)),
+		"action_seconds": _round_number(maxf(float(decision.get("action_seconds", action_base_seconds)), 0.12)),
+		"recovery_seconds": _round_number(maxf(float(decision.get("recovery_seconds", recovery_base_seconds)), 0.12)),
+		"reason_trace": _get_string_array(decision.get("reason_trace", [])),
 		"construct": {
 			"spawn": bool(construct_section.get("spawn", false)),
 			"cells": _normalize_construct_cells(construct_section.get("cells", []))
 		}
 	}
 
-	return _coerce_active_combat_decision(sanitized_decision)
+	return _coerce_phase_decision(sanitized_decision)
 
 func _execute_pending_ai_actions() -> void:
 	_wants_jump = false
@@ -848,6 +1003,31 @@ func _clear_constructs() -> void:
 	_active_constructs.clear()
 	_ai_state["active_constructs"] = 0
 
+func _refresh_procgen_context() -> void:
+	if _tile_catalog == null or _procgen_api == null:
+		return
+
+	var level_tile_map: TileMap = _find_level_tile_map()
+	if level_tile_map == null:
+		return
+
+	var is_new_tile_map: bool = _procgen_api.tile_map != level_tile_map
+	if is_new_tile_map:
+		_procgen_api.configure(level_tile_map, _tile_catalog)
+		_procgen_api.clear_visual_mappings()
+		_procgen_api.register_theme(ProcGenDefaults.build_theme())
+
+	_procgen_api.consume_tile_map_metadata()
+
+func _find_level_tile_map() -> TileMap:
+	if get_tree().current_scene != null:
+		var scene_tile_map: TileMap = get_tree().current_scene.find_child("TileMap", true, false) as TileMap
+		if scene_tile_map != null:
+			return scene_tile_map
+	if get_parent() != null:
+		return get_parent().find_child("TileMap", true, false) as TileMap
+	return null
+
 func _capture_instance_scale() -> void:
 	_presentation_scale = Vector2(absf(scale.x), absf(scale.y))
 	if is_zero_approx(_presentation_scale.x):
@@ -1018,6 +1198,8 @@ func _clear_llm_intent() -> void:
 	_pending_construct_request = false
 	_pending_construct_cells.clear()
 	_wants_jump = false
+	_llm_suggested_decision = {}
+	_queued_phase_decision = {}
 
 func _capture_runtime_state() -> void:
 	_ai_state["position"] = _vector_to_dict(global_position)
@@ -1025,12 +1207,15 @@ func _capture_runtime_state() -> void:
 	_ai_state["move_intent"] = _move_intent
 	_ai_state["stomp_state"] = _stomp_state
 	_ai_state["active_constructs"] = _active_constructs.size()
+	_ai_state["combat_phase"] = String(_combat_phase)
+	_ai_state["phase_time_remaining"] = _round_number(_phase_timer)
 
 func _build_ai_prompt_snapshot() -> Dictionary:
 	var player_snapshot := _build_player_snapshot()
 	var to_player := Vector2.ZERO
 	if _player != null and is_instance_valid(_player):
 		to_player = _player.global_position - global_position
+	var environment_snapshot: Dictionary = _build_environment_snapshot()
 
 	return {
 		"timestamp_seconds": _round_number(_get_now_seconds()),
@@ -1061,22 +1246,83 @@ func _build_ai_prompt_snapshot() -> Dictionary:
 				"quota_exhausted": _is_fireball_quota_exhausted()
 			}
 		},
+		"environment": environment_snapshot,
+		"tooling": {
+			"available_tools": _procgen_api.get_tool_descriptors() if _procgen_api != null else []
+		},
+		"combat_rhythm": {
+			"phase": String(_combat_phase),
+			"phase_time_remaining": _round_number(_phase_timer),
+			"hesitation_chance": hesitation_chance,
+			"imperfect_decision_noise": imperfect_decision_noise,
+			"observation_seconds": observation_base_seconds,
+			"thinking_seconds": thinking_base_seconds,
+			"action_seconds": action_base_seconds,
+			"recovery_seconds": recovery_base_seconds
+		},
 		"recent_signals": {
 			"player_last_attack": _last_player_attack_snapshot,
 			"player_last_hit_on_boss": _last_player_hit_on_boss,
 			"boss_last_action_result": _last_action_result,
-			"boss_last_llm_decision": _last_ai_decision
+			"boss_last_llm_decision": _last_ai_decision,
+			"boss_last_llm_advice": _llm_suggested_decision
 		},
 		"combat_directives": {
 			"default_sprite_facing": "right",
 			"must_face_player": true,
 			"must_stay_in_combat_mode": true,
-			"do_not_idle": true,
-			"goal": "maintain simultaneous attack pressure and defensive structure usage",
+			"do_not_chain_actions_instantly": true,
+			"goal": "maintain pressure with believable pacing and environment-aware choices",
 			"preferred_min_distance_to_player": _round_number(ai_preferred_min_distance),
 			"spacing_rule": "avoid getting too close unless a stomp or emergency punish is clearly worth it",
-			"play_area_rule": "never move beyond play_bounds_x.start or play_bounds_x.end"
+			"play_area_rule": "never move beyond play_bounds_x.start or play_bounds_x.end",
+			"rhythm_rule": "observe, think, act, then recover before the next committed action"
 		}
+	}
+
+func _build_environment_snapshot() -> Dictionary:
+	if _procgen_api == null:
+		return {
+			"current_tile": {},
+			"current_tile_risk": {"score": 0.0, "reasons": []},
+			"player_tile": {},
+			"safe_positions": [],
+			"nearby_hazards": [],
+			"hazard_ahead": false,
+			"forward_simulation": {}
+		}
+
+	var boss_anchor: Vector2 = _get_ground_impact_position()
+	var current_tile: Dictionary = _procgen_api.get_tile_info_at_world(boss_anchor)
+	var current_tile_risk: Dictionary = _procgen_api.evaluate_risk(current_tile)
+	var player_tile: Dictionary = {}
+	if _player != null and is_instance_valid(_player):
+		player_tile = _procgen_api.get_tile_info_at_world(_player.global_position)
+
+	var nearby_tiles: Array[Dictionary] = _procgen_api.get_nearby_tiles(boss_anchor, 3)
+	var nearby_hazards: Array[Dictionary] = []
+	for tile in nearby_tiles:
+		if float(tile.get("danger", 0.0)) <= 0.0:
+			continue
+		nearby_hazards.append(tile)
+
+	var forward_direction: String = _get_face_to_player_text()
+	var forward_simulation: Dictionary = _procgen_api.simulate_move({
+		"actor_position": boss_anchor,
+		"move": forward_direction,
+		"distance_cells": 2,
+		"jump": false
+	})
+	var safe_positions: Array[Dictionary] = _procgen_api.get_safe_positions(boss_anchor, 6, 5)
+
+	return {
+		"current_tile": current_tile,
+		"current_tile_risk": current_tile_risk,
+		"player_tile": player_tile,
+		"safe_positions": safe_positions,
+		"nearby_hazards": nearby_hazards,
+		"hazard_ahead": not bool(forward_simulation.get("landing_safe", true)),
+		"forward_simulation": forward_simulation
 	}
 
 func _build_boss_snapshot() -> Dictionary:
@@ -1136,24 +1382,34 @@ func _build_player_snapshot() -> Dictionary:
 	}
 
 func _build_ai_system_prompt() -> String:
-	return """You are the final boss combat brain for a fast 2D action platformer.
-Output only compact JSON that matches the response schema. No prose. No markdown. No explanations.
-Make split-second decisions. Treat this as fight-or-flight where milliseconds matter.
-The local game code will only validate and execute legal abilities. It must not choose strategy for you.
-The boss sprite faces right by default.
-Always face the player. Stay in combat mode. Maintain both attack pressure and defensive behavior.
-Do not stand still to think. Do not output passive plans. If you are able to act, choose an action or reposition immediately.
-Maintain at least about %s horizontal units from the knight when practical. Do not drift into point-blank range without a clear reason.
-Stay inside the horizontal play area between x=%s and x=%s. Never move beyond those X bounds.
-You may fire at most %s fireballs every %s seconds. When the fireball quota is low or exhausted, shift into construct-heavy play and use walls/ramparts/other constructs instead of trying to spam projectiles.
-Fight creatively using movement, facing, jumping, stomps, fireballs, and constructs.
-Use resources carefully. Respect cooldowns, construct slots remaining, and your block budget per cast.
-Construct coordinates are relative to the boss's current facing:
+	return """You are the strategic combat planner for a 2D platformer final boss.
+Output only compact JSON that matches the response schema. No prose. No markdown.
+Behave like a tactical fighter, not a command executor.
+Use this rhythm on every decision:
+1. Observe the player, spacing, hazards, footing, and available safe tiles.
+2. Think briefly and choose one strong action or a deliberate reposition.
+3. Act with intent.
+4. Recover for a short time before the next commitment.
+The boss should feel dangerous but human:
+- do not chain actions instantly
+- allow short hesitations and recovery beats
+- prefer one committed action over frantic multi-action spam
+- accept imperfect but plausible decisions when two options are close
+- respect hazards and unstable footing
+Always face the player.
+Maintain about %s horizontal units of spacing when practical.
+Stay inside the horizontal play area between x=%s and x=%s.
+You may fire at most %s fireballs every %s seconds. When quota is low or exhausted, lean on constructs, spacing, and positioning.
+Construct coordinates are relative to current facing:
 - positive x = forward
 - negative x = behind
 - y = 0 is the ground anchor
 - negative y builds upward
-You may combine actions in one decision if they are worth the risk.
+Required output style:
+- include a primary_action
+- include a short reason_trace with observe/think/act wording
+- include non-zero observation_seconds, thinking_seconds, action_seconds, and recovery_seconds
+- recovery_seconds should create believable pacing, not zero-delay chaining
 Construct budget per cast: %d blocks.
 Allowed construct x range: %d to %d.
 Allowed construct y range: %d to %d.
@@ -1174,8 +1430,26 @@ func _build_ai_response_schema() -> Dictionary:
 	return {
 		"type": "object",
 		"additionalProperties": false,
-		"required": ["move", "face", "jump_now", "fire_now", "stomp_now", "construct", "horizon_seconds"],
+		"required": [
+			"primary_action",
+			"move",
+			"face",
+			"jump_now",
+			"fire_now",
+			"stomp_now",
+			"construct",
+			"horizon_seconds",
+			"observation_seconds",
+			"thinking_seconds",
+			"action_seconds",
+			"recovery_seconds",
+			"reason_trace"
+		],
 		"properties": {
+			"primary_action": {
+				"type": "string",
+				"enum": ["fire", "stomp", "construct", "jump", "reposition", "retreat", "wait"]
+			},
 			"move": {
 				"type": "string",
 				"enum": ["left", "right", "hold"]
@@ -1197,6 +1471,34 @@ func _build_ai_response_schema() -> Dictionary:
 				"type": "number",
 				"minimum": 0.1,
 				"maximum": max(ai_max_decision_horizon_seconds, 0.1)
+			},
+			"observation_seconds": {
+				"type": "number",
+				"minimum": 0.08,
+				"maximum": 1.0
+			},
+			"thinking_seconds": {
+				"type": "number",
+				"minimum": 0.08,
+				"maximum": 1.0
+			},
+			"action_seconds": {
+				"type": "number",
+				"minimum": 0.12,
+				"maximum": 1.5
+			},
+			"recovery_seconds": {
+				"type": "number",
+				"minimum": 0.12,
+				"maximum": 1.5
+			},
+			"reason_trace": {
+				"type": "array",
+				"minItems": 2,
+				"maxItems": 4,
+				"items": {
+					"type": "string"
+				}
 			},
 			"construct": {
 				"type": "object",
@@ -1281,6 +1583,18 @@ func _vector2i_array_to_dicts(cells: Array[Vector2i]) -> Array[Dictionary]:
 
 func _round_number(value: float) -> float:
 	return snappedf(value, 0.01)
+
+func _get_dictionary(value: Variant) -> Dictionary:
+	if value is Dictionary:
+		return value
+	return {}
+
+func _get_string_array(value: Variant) -> Array[String]:
+	var result: Array[String] = []
+	if value is Array:
+		for item in value:
+			result.append(String(item))
+	return result
 
 func _safe_ratio(value: int, maximum_value: int) -> float:
 	if maximum_value <= 0:

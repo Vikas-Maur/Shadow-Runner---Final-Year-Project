@@ -1,7 +1,6 @@
 extends Node2D
 
 const PORTAL_SCENE := preload("res://scenes/portal.tscn")
-const PROC_SEED := 300319
 const MID_LAYER := 1
 const BRIDGE_TILES := 4
 const EXTENSION_MARGIN_TILES := 3
@@ -15,6 +14,7 @@ const PROC_ONE_WAY_ATLAS := Vector2i(3, 0)
 
 var _catalog: ProcGenTileCatalog
 var _service: ProcGenService
+var _runtime_seed: int = 0
 
 func _ready() -> void:
 	if tile_map == null:
@@ -22,33 +22,14 @@ func _ready() -> void:
 
 	_catalog = ProcGenDefaults.build_catalog()
 	_service = ProcGenService.new(_catalog)
+	_runtime_seed = _build_runtime_seed()
 
 	var floor_anchor: Vector2i = _find_extension_anchor_cell()
 	if floor_anchor == Vector2i(-1, -1):
 		push_warning("Level 3 procedural extension could not find a floor anchor.")
 		return
 
-	var request: ProcGenRequest = ProcGenRequest.from_dict({
-		"seed": PROC_SEED,
-		"width": 52,
-		"height": 22,
-		"algorithm": "rule_based",
-		"logical_layers": ["ground", "stealth"],
-		"params": {
-			"floor_thickness": 3,
-			"max_gap": 4,
-			"max_rise": 2,
-			"min_platform": 4,
-			"max_platform": 7,
-			"shadow_depth": 0,
-			"hazard_chance": 0.0
-		},
-		"agent_overrides": [
-			{"layer": "ground", "x": 0, "y": 17, "tile_id": "floor"},
-			{"layer": "ground", "x": 1, "y": 17, "tile_id": "floor"},
-			{"layer": "ground", "x": 2, "y": 17, "tile_id": "floor"}
-		]
-	})
+	var request: ProcGenRequest = _build_randomized_request()
 
 	var layout: ProcGenLayout = _service.generate_layout(request)
 	var entry_floor_y: int = _find_entry_floor_y(layout)
@@ -62,8 +43,53 @@ func _ready() -> void:
 		return
 
 	_draw_bridge(floor_anchor, extension_origin.x, theme)
-	ProcGenTileMapRenderer.new().render(layout, _catalog, theme, tile_map, PROC_SEED, extension_origin, false)
+	ProcGenTileMapRenderer.new().render(layout, _catalog, theme, tile_map, _runtime_seed, extension_origin, false)
+	_register_procgen_region(layout, extension_origin, theme)
 	_spawn_portal(layout, extension_origin)
+
+func _build_runtime_seed() -> int:
+	return int(Time.get_ticks_usec() % 2147483647)
+
+func _build_randomized_request() -> ProcGenRequest:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = _runtime_seed
+
+	var width: int = rng.randi_range(48, 68)
+	var height: int = rng.randi_range(21, 24)
+	var floor_thickness: int = 3
+	var corridor_bottom: int = height - floor_thickness - 2
+	var min_platform: int = rng.randi_range(4, 6)
+	var max_platform: int = min_platform + rng.randi_range(2, 4)
+	var max_gap: int = rng.randi_range(3, 4)
+	var max_rise: int = rng.randi_range(1, 2)
+	var shadow_depth: int = rng.randi_range(0, 1)
+	var overrides: Array[Dictionary] = []
+
+	for x in range(3):
+		overrides.append({
+			"layer": "ground",
+			"x": x,
+			"y": corridor_bottom,
+			"tile_id": "floor"
+		})
+
+	return ProcGenRequest.from_dict({
+		"seed": _runtime_seed,
+		"width": width,
+		"height": height,
+		"algorithm": "rule_based",
+		"logical_layers": ["ground", "stealth"],
+		"params": {
+			"floor_thickness": floor_thickness,
+			"max_gap": max_gap,
+			"max_rise": max_rise,
+			"min_platform": min_platform,
+			"max_platform": max_platform,
+			"shadow_depth": shadow_depth,
+			"hazard_chance": 0.0
+		},
+		"agent_overrides": overrides
+	})
 
 func _find_extension_anchor_cell() -> Vector2i:
 	var used_rect: Rect2i = tile_map.get_used_rect()
@@ -102,7 +128,7 @@ func _build_fixed_proc_theme() -> ProcGenVisualTheme:
 	return theme
 
 func _draw_bridge(floor_anchor: Vector2i, extension_start_x: int, theme: ProcGenVisualTheme) -> void:
-	var bridge_visual: ProcGenTileVisual = theme.pick_visual(&"ground", &"floor", floor_anchor, PROC_SEED)
+	var bridge_visual: ProcGenTileVisual = theme.pick_visual(&"ground", &"floor", floor_anchor, _runtime_seed)
 	if bridge_visual == null:
 		return
 
@@ -149,7 +175,7 @@ func _make_visual(logical_layer: StringName, tile_id: StringName, atlas_coords: 
 func _theme_has_ground_collision(theme: ProcGenVisualTheme) -> bool:
 	var required_tiles: Array[StringName] = [&"floor", &"wall", &"one_way"]
 	for tile_id in required_tiles:
-		var visual: ProcGenTileVisual = theme.pick_visual(&"ground", tile_id, Vector2i.ZERO, PROC_SEED)
+		var visual: ProcGenTileVisual = theme.pick_visual(&"ground", tile_id, Vector2i.ZERO, _runtime_seed)
 		if visual == null:
 			return false
 		if not _visual_has_collision(visual):
@@ -169,6 +195,25 @@ func _visual_has_collision(visual: ProcGenTileVisual) -> bool:
 	if tile_data == null:
 		return false
 	return tile_data.get_collision_polygons_count(0) > 0
+
+func _register_procgen_region(layout: ProcGenLayout, origin: Vector2i, theme: ProcGenVisualTheme) -> void:
+	if tile_map == null:
+		return
+
+	var runtime_regions: Array[Dictionary] = []
+	if tile_map.has_meta("procgen_runtime_regions"):
+		var meta_value: Variant = tile_map.get_meta("procgen_runtime_regions")
+		if meta_value is Array:
+			for item in meta_value:
+				if item is Dictionary:
+					runtime_regions.append(item)
+
+	runtime_regions.append({
+		"layout": layout,
+		"origin": origin,
+		"theme": theme
+	})
+	tile_map.set_meta("procgen_runtime_regions", runtime_regions)
 
 func _is_mid_layer_occupied(cell: Vector2i) -> bool:
 	if cell.y < 0:
