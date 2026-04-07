@@ -1,0 +1,97 @@
+[gd_scene format=3 uid="uid://bwxvfrbuaeamt"]
+
+[ext_resource type="Script" uid="uid://bckudo3eccb35" path="res://scripts/portal.gd" id="1_portal"]
+[ext_resource type="AudioStream" uid="uid://cmy0pq5a825gq" path="res://assets/sounds/88_Teleport_02.wav" id="2_d4jfq"]
+[ext_resource type="Texture2D" uid="uid://chyu18kbyuyvx" path="res://assets/sprites/portal5_spritesheet.png" id="2_texture"]
+[ext_resource type="FontFile" uid="uid://dbjl1e6kdxpl6" path="res://assets/fonts/PixelOperator8.ttf" id="3_font"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0"]
+atlas = ExtResource("2_texture")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1"]
+atlas = ExtResource("2_texture")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2"]
+atlas = ExtResource("2_texture")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3"]
+atlas = ExtResource("2_texture")
+region = Rect2(96, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4"]
+atlas = ExtResource("2_texture")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5"]
+atlas = ExtResource("2_texture")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6"]
+atlas = ExtResource("2_texture")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_portal"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_portal"]
+size = Vector2(14, 22)
+
+[node name="Portal" type="Area2D" unique_id=1658336848]
+z_index = 3
+collision_mask = 2
+script = ExtResource("1_portal")
+portal_activate_sounds = Array[AudioStream]([ExtResource("2_d4jfq")])
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1427784706]
+position = Vector2(0, -16)
+sprite_frames = SubResource("SpriteFrames_portal")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1549008665]
+position = Vector2(0, -16)
+shape = SubResource("RectangleShape2D_portal")
+
+[node name="PromptLabel" type="Label" parent="." unique_id=1648797204]
+offset_left = -52.0
+offset_top = -46.0
+offset_right = 52.0
+offset_bottom = -22.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 8
+text = "Press I or click to enter"
+horizontal_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="PortalSoundPlayer" type="AudioStreamPlayer" parent="." unique_id=993702879]
+volume_db = 24.0

@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://c8h8620q2u8ta"
+path="res://.godot/imported/power jump.wav-60c3524594464d5fbf52bb051b390ffb.sample"
+
+[deps]
+
+source_file="res://assets/sounds/power jump.wav"
+dest_files=["res://.godot/imported/power jump.wav-60c3524594464d5fbf52bb051b390ffb.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

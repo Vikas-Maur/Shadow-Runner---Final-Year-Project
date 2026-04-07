@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://bm7afohq7igqd"
+path="res://.godot/imported/JUMP newt.wav-9bc235b1f411d8147f5e5ea604f67078.sample"
+
+[deps]
+
+source_file="res://assets/sounds/JUMP newt.wav"
+dest_files=["res://.godot/imported/JUMP newt.wav-9bc235b1f411d8147f5e5ea604f67078.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

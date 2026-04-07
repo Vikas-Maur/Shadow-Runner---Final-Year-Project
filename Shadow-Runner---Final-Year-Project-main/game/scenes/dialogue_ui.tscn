@@ -1,0 +1,51 @@
+[gd_scene load_steps=2 format=3 uid="uid://titgd3vuwxif"]
+
+[ext_resource type="Script" uid="uid://cu5gy1x6u8bm5" path="res://scripts/dialogue_ui.gd" id="1_dwk8m"]
+
+[node name="DialogueUI" type="CanvasLayer"]
+process_mode = 3
+script = ExtResource("1_dwk8m")
+
+[node name="ChatPanel" type="Panel" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -371.0
+offset_top = -181.0
+offset_right = 372.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ChatPanel"]
+layout_mode = 0
+offset_left = 7.0
+offset_top = 9.0
+offset_right = 731.0
+offset_bottom = 171.0
+
+[node name="NPCNameLabel" type="Label" parent="ChatPanel/VBoxContainer"]
+layout_mode = 2
+text = "NPC Name"
+
+[node name="ChatHistory" type="RichTextLabel" parent="ChatPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+scroll_following = true
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ChatPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="MessageInput" type="LineEdit" parent="ChatPanel/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Type your message..."
+
+[node name="SendButton" type="Button" parent="ChatPanel/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Send"

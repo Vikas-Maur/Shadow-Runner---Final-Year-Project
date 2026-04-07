@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://wcihsjsknfbs"]
+
+[ext_resource type="Texture2D" uid="uid://c0hykd8i6h7jp" path="res://assets/sprites/objects_/items_.png" id="1_v30as"]
+[ext_resource type="Script" uid="uid://dwt8leliuiyot" path="res://scripts/heart.gd" id="1_ycbwg"]
+[ext_resource type="AudioStream" uid="uid://bdu88021lhmjt" path="res://assets/sounds/heartPickup.wav" id="3_krgnv"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ycbwg"]
+
+[node name="Heart" type="Area2D" unique_id=1001058935]
+script = ExtResource("1_ycbwg")
+collect_sounds = Array[AudioStream]([ExtResource("3_krgnv")])
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=601439839]
+texture = ExtResource("1_v30as")
+region_enabled = true
+region_rect = Rect2(33.42481, 32.957924, 13.769985, 14.244812)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2131713502]
+shape = SubResource("CircleShape2D_ycbwg")
+
+[node name="CollectSound" type="AudioStreamPlayer" parent="." unique_id=897001007]
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

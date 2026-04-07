@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://cidth6g5xpgfb"]
+
+[ext_resource type="PackedScene" uid="uid://d2w2i5h0lhc6l" path="res://scenes/npc.tscn" id="1_keb0c"]
+[ext_resource type="Texture2D" uid="uid://umvtidigfsu5" path="res://assets/sprites/MiniNobleWoman.png" id="2_b1gb8"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0owfs"]
+atlas = ExtResource("2_b1gb8")
+region = Rect2(0, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pt1vw"]
+atlas = ExtResource("2_b1gb8")
+region = Rect2(32, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jch7y"]
+atlas = ExtResource("2_b1gb8")
+region = Rect2(64, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l7e4y"]
+atlas = ExtResource("2_b1gb8")
+region = Rect2(96, 16, 32, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_b1gb8"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0owfs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pt1vw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jch7y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l7e4y")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="NPC" unique_id=833666268 instance=ExtResource("1_keb0c")]
+npc_name = "Lady Seraphine Vaelthorn"
+personality = "Lady Seraphine Vaelthorn carries an elegance that blends grace with quiet power. She is perceptive, intelligent, and socially masterful, able to read intentions and emotions before others finish speaking. Where Aldric represents strength and order, Seraphine represents influence and subtle control. She speaks smoothly and eloquently, often with a gentle smile that hides a sharp and calculating mind. Seraphine rarely confronts directly; instead, she guides conversations and outcomes with diplomacy, charm, and carefully chosen words. Despite her refined demeanor, she is deeply protective of her family and unafraid to act ruthlessly if necessary. Together with Aldric, she forms a balanced partnership—his steady authority complemented by her insight and political finesse."
+
+[node name="PromptLabel" parent="." index="0" unique_id=1308936782]
+metadata/_edit_use_anchors_ = true
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." index="2" unique_id=2032933551]
+position = Vector2(1.1920929e-07, -6.9999995)
+scale = Vector2(1.25, 1.25)
+sprite_frames = SubResource("SpriteFrames_b1gb8")
+flip_h = true

@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://cuv4vme4rwno0"]
+
+[ext_resource type="PackedScene" uid="uid://dqnaqj8yb6hwd" path="res://scenes/player.tscn" id="1_rbmkf"]
+[ext_resource type="Script" uid="uid://brqqg1g8yni34" path="res://scripts/game.gd" id="2_game"]
+[ext_resource type="PackedScene" uid="uid://titgd3vuwxif" path="res://scenes/dialogue_ui.tscn" id="5_iywne"]
+[ext_resource type="PackedScene" path="res://scenes/health_ui.tscn" id="5_y0g1h"]
+[ext_resource type="Script" uid="uid://nko8c6jlmy1d" path="res://scripts/ollama_api.gd" id="6_p57ef"]
+[ext_resource type="FontFile" uid="uid://dbjl1e6kdxpl6" path="res://assets/fonts/PixelOperator8.ttf" id="7_fm1v0"]
+[ext_resource type="Script" uid="uid://cyc6qm47h2fab" path="res://scripts/game_manager.gd" id="8_2w7xl"]
+[ext_resource type="FontFile" uid="uid://c53kogtyjwsss" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="9_53a7o"]
+[ext_resource type="Texture2D" uid="uid://bped01tsjeycn" path="res://assets/sprites/coin.png" id="10_t1bt6"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6nc3b"]
+atlas = ExtResource("10_t1bt6")
+region = Rect2(0, 0, 16, 16)
+
+[node name="Game" type="Node2D" unique_id=172901258]
+script = ExtResource("2_game")
+
+[node name="DialogueUI" parent="." unique_id=67491885 instance=ExtResource("5_iywne")]
+
+[node name="OllamaAPI" type="Node" parent="." unique_id=1430541441]
+script = ExtResource("6_p57ef")
+
+[node name="Player" parent="." unique_id=2088801820 instance=ExtResource("1_rbmkf")]
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=14837350]
+position = Vector2(0, -7)
+zoom = Vector2(4, 4)
+limit_top = -9999999
+limit_bottom = 120
+limit_smoothed = true
+position_smoothing_enabled = true
+
+[node name="LevelRoot" type="Node2D" parent="." unique_id=1538615541]
+
+[node name="HealthUI" parent="." unique_id=376954420 instance=ExtResource("5_y0g1h")]
+
+[node name="GameManager" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
+layer = 8
+script = ExtResource("8_2w7xl")
+
+[node name="ScorePanel" type="MarginContainer" parent="GameManager"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -72.0
+offset_top = 6.0
+offset_right = 72.0
+offset_bottom = 38.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 4
+
+[node name="ScoreRow" type="HBoxContainer" parent="GameManager/ScorePanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="CoinIcon" type="TextureRect" parent="GameManager/ScorePanel/ScoreRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 24)
+texture = SubResource("AtlasTexture_6nc3b")
+stretch_mode = 5
+
+[node name="ScoreLabel" type="Label" parent="GameManager/ScorePanel/ScoreRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("9_53a7o")
+theme_override_font_sizes/font_size = 16
+theme_override_constants/outline_size = 2
+text = "0"
+horizontal_alignment = 1
+
+[node name="TutorialLayer" type="CanvasLayer" parent="."]
+layer = 9
+
+[node name="TutorialHint" type="PanelContainer" parent="TutorialLayer"]
+visible = false
+anchors_preset = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 26.0
+offset_right = 180.0
+offset_bottom = 82.0
+
+[node name="MarginContainer" type="MarginContainer" parent="TutorialLayer/TutorialHint"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="TutorialLabel" type="Label" parent="TutorialLayer/TutorialHint/MarginContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_fm1v0")
+theme_override_font_sizes/font_size = 8
+text = "Tutorial"
+horizontal_alignment = 1
+autowrap_mode = 2

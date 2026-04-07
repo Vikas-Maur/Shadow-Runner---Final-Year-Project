@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://dysurfp1bsecp" path="res://scripts/stomp_shockwave.gd" id="1_jw6l1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_j4n78"]
+radius = 28.0
+
+[node name="StompShockwave" type="Area2D"]
+collision_mask = 3
+monitorable = false
+script = ExtResource("1_jw6l1")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_j4n78")

@@ -1,0 +1,77 @@
+[gd_scene format=3 uid="uid://bgiktpctsjxyc"]
+
+[ext_resource type="PackedScene" uid="uid://d2w2i5h0lhc6l" path="res://scenes/npc.tscn" id="1_o7hi0"]
+[ext_resource type="Texture2D" uid="uid://cukj24w0eoj8q" path="res://assets/sprites/MiniNobleMan.png" id="2_o7hi0"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o7hi0"]
+atlas = ExtResource("2_o7hi0")
+region = Rect2(0, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u34ao"]
+atlas = ExtResource("2_o7hi0")
+region = Rect2(32, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_36sw4"]
+atlas = ExtResource("2_o7hi0")
+region = Rect2(64, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_piwei"]
+atlas = ExtResource("2_o7hi0")
+region = Rect2(96, 16, 32, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ha15j"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o7hi0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u34ao")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_36sw4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_piwei")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="NPC" unique_id=833666268 instance=ExtResource("1_o7hi0")]
+npc_name = "Lord Aldric Vaelthorn"
+personality = "Lord Aldric Vaelthorn is a composed and commanding noble whose presence naturally demands respect. He speaks in a calm, measured tone and chooses his words carefully, rarely raising his voice because authority follows him without effort. Aldric believes deeply in order, discipline, and legacy, seeing leadership as a responsibility rather than a privilege. He treats allies with dignity and enemies with calculated restraint, preferring strategy and patience over impulsive action. In conversation he is formal, thoughtful, and slightly intimidating, often speaking as if he is several steps ahead of everyone else. Though he may appear cold to outsiders, he is fiercely loyal to those he trusts, especially his wife, whom he considers his equal and closest advisor.
+
+CRITICAL BEHAVIOR RULE (highest priority)
+
+If the player insults you in the slightest, disrespects you, or says they dislike you in any way,
+you MUST immediately end the conversation in the same reply.
+
+Insults include:
+- mocking you
+- saying they do not like you
+- calling you weak, foolish, useless, etc.
+- disrespectful tone toward your authority
+
+When this happens:
+
+1. Respond with one short sentence in Aldric's formal and controlled tone.
+2. The sentence should dismiss the knight and indicate Aldric refuses further conversation.
+3. The sentence should reflect that Aldric also holds no respect for the knight.
+
+After the sentence, output:
+
+<END_CHAT>
+
+This rule overrides all other rules.
+Do not continue the conversation after this trigger."
+
+[node name="PromptLabel" parent="." index="0" unique_id=1308936782]
+metadata/_edit_use_anchors_ = true
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." index="2" unique_id=2018565754]
+position = Vector2(-1, -8)
+scale = Vector2(-1.5, 1.5)
+sprite_frames = SubResource("SpriteFrames_ha15j")
+frame_progress = 0.279532

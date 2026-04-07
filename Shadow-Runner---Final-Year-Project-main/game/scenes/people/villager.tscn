@@ -1,0 +1,48 @@
+[gd_scene load_steps=8 format=3 uid="uid://d38xs08ad4q07"]
+
+[ext_resource type="PackedScene" uid="uid://d2w2i5h0lhc6l" path="res://scenes/npc.tscn" id="1_kufqh"]
+[ext_resource type="Texture2D" uid="uid://yo4ixb7sohkb" path="res://assets/sprites/MiniOldMan.png" id="2_bjpa3"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i0lkk"]
+atlas = ExtResource("2_bjpa3")
+region = Rect2(0, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_37mdv"]
+atlas = ExtResource("2_bjpa3")
+region = Rect2(32, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6eh0s"]
+atlas = ExtResource("2_bjpa3")
+region = Rect2(64, 16, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a0ief"]
+atlas = ExtResource("2_bjpa3")
+region = Rect2(96, 16, 32, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ha15j"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i0lkk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_37mdv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6eh0s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a0ief")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="NPC" instance=ExtResource("1_kufqh")]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." index="2"]
+position = Vector2(-1, -8)
+scale = Vector2(-1.5, 1.5)
+sprite_frames = SubResource("SpriteFrames_ha15j")
+frame_progress = 0.279532

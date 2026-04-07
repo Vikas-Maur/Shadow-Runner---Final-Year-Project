@@ -1,0 +1,78 @@
+[gd_scene format=3 uid="uid://vsrydvr081rw"]
+
+[ext_resource type="Script" uid="uid://4cmiu15hi5kl" path="res://scripts/slime.gd" id="1_vmxw6"]
+[ext_resource type="AudioStream" uid="uid://ca2qnfly36kp0" path="res://assets/sounds/slime walk.wav" id="2_h6s7y"]
+[ext_resource type="AudioStream" uid="uid://yevnuelplmdg" path="res://assets/sounds/slime dead.wav" id="3_0uv0u"]
+[ext_resource type="Texture2D" uid="uid://bwoec51f6mei0" path="res://assets/sprites/slime_purple.png" id="3_vmxw6"]
+[ext_resource type="PackedScene" uid="uid://dtrbka1ef726o" path="res://scenes/killzone.tscn" id="4_e5dfd"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h6s7y"]
+atlas = ExtResource("3_vmxw6")
+region = Rect2(72, 54, 24, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0uv0u"]
+atlas = ExtResource("3_vmxw6")
+region = Rect2(48, 54, 24, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e5dfd"]
+atlas = ExtResource("3_vmxw6")
+region = Rect2(0, 54, 24, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w1kfd"]
+atlas = ExtResource("3_vmxw6")
+region = Rect2(72, 36, 24, 18)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_a8uf2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h6s7y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0uv0u")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e5dfd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w1kfd")
+}],
+"loop": true,
+"name": &"default",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_u4xjq"]
+size = Vector2(10, 14)
+
+[node name="Slime" type="Node2D" unique_id=569542756]
+script = ExtResource("1_vmxw6")
+walk_sounds = Array[AudioStream]([ExtResource("2_h6s7y")])
+death_sounds = Array[AudioStream]([ExtResource("3_0uv0u")])
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=560729379]
+position = Vector2(0, -12)
+sprite_frames = SubResource("SpriteFrames_a8uf2")
+autoplay = "default"
+frame_progress = 0.54822797
+
+[node name="Killzone" parent="." unique_id=919027613 instance=ExtResource("4_e5dfd")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Killzone" unique_id=934929823]
+position = Vector2(0, -7)
+shape = SubResource("RectangleShape2D_u4xjq")
+
+[node name="RayCastRight" type="RayCast2D" parent="." unique_id=39528599]
+position = Vector2(0, -7)
+target_position = Vector2(9, 0)
+
+[node name="RayCastLeft" type="RayCast2D" parent="." unique_id=543656044]
+position = Vector2(0, -7)
+target_position = Vector2(-9, 0)
+
+[node name="WalkSoundPlayer" type="AudioStreamPlayer2D" parent="." unique_id=1602278525]
+max_distance = 200.0
+
+[node name="DeathSoundPlayer" type="AudioStreamPlayer2D" parent="." unique_id=988534389]
+volume_db = 24.0
+max_distance = 200.0

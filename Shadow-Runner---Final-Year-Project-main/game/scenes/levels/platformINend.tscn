@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://bxpilgrntbxly"]
+
+[ext_resource type="Script" uid="uid://8bqjyny0v3r5" path="res://scenes/levels/platformINend.gd" id="1_4k5ax"]
+[ext_resource type="Texture2D" uid="uid://d0q2g65ahgok" path="res://assets/sprites/world_tileset.png" id="1_7rkx7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4k5ax"]
+size = Vector2(18, 17)
+
+[node name="platformINend" type="CharacterBody2D" unique_id=334133793]
+script = ExtResource("1_4k5ax")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=794063124]
+texture = ExtResource("1_7rkx7")
+region_enabled = true
+region_rect = Rect2(47.45849, 31.200367, 17.236229, 17.932648)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=184246849]
+position = Vector2(0, -0.5)
+shape = SubResource("RectangleShape2D_4k5ax")

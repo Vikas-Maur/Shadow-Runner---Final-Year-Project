@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://ca2qnfly36kp0"
+path="res://.godot/imported/slime walk.wav-378680524675617d13395a62474486dd.sample"
+
+[deps]
+
+source_file="res://assets/sounds/slime walk.wav"
+dest_files=["res://.godot/imported/slime walk.wav-378680524675617d13395a62474486dd.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

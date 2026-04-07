@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://djwkym3dgmy7y"]
+
+[ext_resource type="Script" uid="uid://duxhtcieuxbtp" path="res://scripts/health_ui.gd" id="1_p6m7u"]
+
+[node name="HealthUI" type="CanvasLayer" unique_id=1243197198]
+layer = 10
+script = ExtResource("1_p6m7u")
+
+[node name="PlayerHealthPanel" type="PanelContainer" parent="." unique_id=1029982971]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 220.0
+offset_bottom = 82.0
+
+[node name="Margin" type="MarginContainer" parent="PlayerHealthPanel" unique_id=1857119174]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="PlayerHealthPanel/Margin" unique_id=805523258]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="PlayerHealthPanel/Margin/VBox" unique_id=1481910259]
+layout_mode = 2
+text = "Player"
+
+[node name="HealthBar" type="ProgressBar" parent="PlayerHealthPanel/Margin/VBox" unique_id=1847474]
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Value" type="Label" parent="PlayerHealthPanel/Margin/VBox" unique_id=471935973]
+layout_mode = 2
+text = "100 / 100"
+
+[node name="NPCHealthPanel" type="PanelContainer" parent="." unique_id=1627815921]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 82.0
+
+[node name="Margin" type="MarginContainer" parent="NPCHealthPanel" unique_id=701884497]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="VBox" type="VBoxContainer" parent="NPCHealthPanel/Margin" unique_id=2141085191]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="NPCHealthPanel/Margin/VBox" unique_id=498877116]
+layout_mode = 2
+text = "NPC"
+
+[node name="HealthBar" type="ProgressBar" parent="NPCHealthPanel/Margin/VBox" unique_id=1456019931]
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Value" type="Label" parent="NPCHealthPanel/Margin/VBox" unique_id=946288735]
+layout_mode = 2
+text = "100 / 100"
