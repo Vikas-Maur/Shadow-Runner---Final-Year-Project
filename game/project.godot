@@ -29,6 +29,10 @@ SoundManager="*uid://cdqksg272x4k0"
 
 [display]
 
+window/size/viewport_width=1152
+window/size/viewport_height=648
+window/stretch/mode="viewport"
+window/stretch/aspect="ignore"
 window/vsync/vsync_mode=0
 
 [input]
