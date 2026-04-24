@@ -62,7 +62,7 @@ const STOMP_DIVING := 2
 
 @export_group("LLM AI")
 @export var enable_llm_ai: bool = true
-@export var ollama_model: String = "gemma2:9b"
+@export var ollama_model: String = "gemma4:latest"
 @export var ai_decision_interval_seconds: float = 0.35
 @export var ai_request_timeout_ms: int = 900
 @export var ai_max_response_tokens: int = 160
