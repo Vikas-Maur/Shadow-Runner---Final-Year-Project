@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+const AISettings = preload("res://scripts/ai_settings.gd")
+
 const FinalBossFireballScene = preload("res://scenes/effects/final_boss_fireball.tscn")
 const FinalBossConstructScene = preload("res://scenes/effects/final_boss_construct.tscn")
 const StompShockwaveScene = preload("res://scenes/effects/stomp_shockwave.tscn")
@@ -229,7 +231,7 @@ func _request_llm_decision() -> void:
 		_build_ai_response_schema(),
 		Callable(self, "_on_llm_decision_response").bind(_ai_request_serial),
 		{
-			"model": ollama_model,
+			"model": AISettings.get_selected_model(ollama_model),
 			"timeout_ms": ai_request_timeout_ms,
 			"num_predict": ai_max_response_tokens,
 			"temperature": ai_temperature,
@@ -249,7 +251,11 @@ func _on_llm_decision_response(result: Dictionary, request_serial: int) -> void:
 	if not is_inside_tree() or not _can_run_combat_ai():
 		return
 
+	var response_text: String = String(result.get("text", "")).strip_edges()
 	if not bool(result.get("ok", false)):
+		print("[FinalBossAI][response][error] ", String(result.get("error", "unknown_error")))
+		if not response_text.is_empty():
+			print("[FinalBossAI][response][raw] ", response_text)
 		_last_action_result = {
 			"time_seconds": _round_number(_get_now_seconds()),
 			"status": "llm_error",
@@ -260,6 +266,8 @@ func _on_llm_decision_response(result: Dictionary, request_serial: int) -> void:
 
 	var decision := _sanitize_ai_decision(result.get("json", {}))
 	if decision.is_empty():
+		if not response_text.is_empty():
+			print("[FinalBossAI][response][invalid] ", response_text)
 		_last_action_result = {
 			"time_seconds": _round_number(_get_now_seconds()),
 			"status": "invalid_decision"
@@ -282,6 +290,9 @@ func _on_llm_decision_response(result: Dictionary, request_serial: int) -> void:
 		_pending_construct_request = false
 
 	_ai_state["last_decision"] = decision
+	if not response_text.is_empty():
+		print("[FinalBossAI][response][raw] ", response_text)
+	print("[FinalBossAI][response][decision] ", JSON.stringify(decision))
 
 	if ai_debug_logging:
 		print("FinalBoss AI decision: ", JSON.stringify(decision))

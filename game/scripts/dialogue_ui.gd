@@ -172,15 +172,25 @@ func _on_ai_response_stream(token: String):
 func _on_ai_response_complete(full_response: String):
 	# Called when streaming is done
 	print("Stream complete, final response length: ", full_response.length())
+	if _is_ai_error_response(full_response):
+		print("[DialogueAI][", current_npc.npc_name if current_npc != null else "UnknownNPC", "][error] ", full_response.strip_edges())
+		streaming_response = ""
+		_replace_latest_npc_response("[color=red]AI error: " + full_response + "[/color]")
+		chat_history.text += "\n\n"
+		chat_history.scroll_to_line(chat_history.get_line_count())
+		return
 
 	var should_end_chat = full_response.find(END_CHAT_TOKEN) != -1
 	if should_end_chat:
 		var cleaned_response = full_response.replace(END_CHAT_TOKEN, "").strip_edges()
+		print("[DialogueAI][", current_npc.npc_name if current_npc != null else "UnknownNPC", "][response] ", cleaned_response)
 		streaming_response = cleaned_response
 		_replace_latest_npc_response(cleaned_response)
 		chat_history.text += "\n\n"
 		_end_conversation_by_npc()
 		return
+
+	print("[DialogueAI][", current_npc.npc_name if current_npc != null else "UnknownNPC", "][response] ", full_response.strip_edges())
 	
 	# Make sure final text is there and add newlines
 	var text = chat_history.text
@@ -202,6 +212,30 @@ func _replace_latest_npc_response(new_text: String):
 	var last_colon = text.rfind(":[/color] ")
 	if last_colon != -1:
 		chat_history.text = text.substr(0, last_colon + 10) + new_text
+
+func _is_ai_error_response(full_response: String) -> bool:
+	var text := full_response.strip_edges()
+	if text.is_empty():
+		return false
+
+	if text.begins_with("No Ollama models are installed."):
+		return true
+
+	var error_prefixes := [
+		"http_",
+		"connect_",
+		"request_",
+		"invalid_",
+		"body_timeout",
+		"bad_status",
+		"not_connected",
+		"empty_response"
+	]
+	for prefix in error_prefixes:
+		if text.begins_with(prefix):
+			return true
+
+	return text == "Connection failed" or text == "Request failed"
 
 func _end_conversation_by_npc():
 	npc_ended_conversation = true
